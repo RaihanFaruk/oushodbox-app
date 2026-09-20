@@ -1,0 +1,48 @@
+"use client";
+
+/**
+ * MedicineEmptyState — Clean empty state for no search/filter results
+ * Preserved faithfully from Stitch medicine_database design.
+ */
+
+interface MedicineEmptyStateProps {
+  onResetFilters: () => void;
+  onQuickSearchNapa: () => void;
+}
+
+export default function MedicineEmptyState({
+  onResetFilters,
+  onQuickSearchNapa,
+}: MedicineEmptyStateProps) {
+  return (
+    <div className="flex flex-col items-center justify-center p-space-xl text-center rounded-xl bg-surface-container-lowest shadow-sm">
+      <div className="w-20 h-20 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant mb-space-md">
+        <span className="material-symbols-outlined text-5xl text-outline" aria-hidden="true">
+          search_off
+        </span>
+      </div>
+      <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">
+        কোনো ওষুধ পাওয়া যায়নি
+      </h3>
+      <p className="font-body-md text-body-md text-on-surface-variant max-w-md mt-1 mb-space-lg">
+        আপনার অনুসন্ধানকৃত নামের সাথে মেলেনি। বানান পরীক্ষা করুন অথবা বিকল্প জেনেরিক গ্রুপ বা প্রস্তুতকারকের নাম দিয়ে চেষ্টা করুন।
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-space-sm">
+        <button
+          type="button"
+          onClick={onResetFilters}
+          className="px-space-lg py-2.5 rounded-xl bg-primary text-on-primary font-label-md text-label-md shadow-sm hover:bg-primary-container transition-all cursor-pointer"
+        >
+          সকল ফিল্টার মুছুন
+        </button>
+        <button
+          type="button"
+          onClick={onQuickSearchNapa}
+          className="px-space-md py-2.5 rounded-xl bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors cursor-pointer"
+        >
+          &apos;Napa&apos; দিয়ে অনুসন্ধান করুন
+        </button>
+      </div>
+    </div>
+  );
+}

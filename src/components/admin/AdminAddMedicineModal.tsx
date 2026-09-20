@@ -1,0 +1,321 @@
+"use client";
+
+/**
+ * AdminAddMedicineModal — Add / Edit Medicine Modal
+ * Faithfully migrated from Stitch admin_panel/code.html
+ */
+
+import { useState, useEffect } from "react";
+import type { AdminMedicineItem } from "@/types";
+
+interface AdminAddMedicineModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (data: Partial<AdminMedicineItem>) => void;
+  editingMedicine: AdminMedicineItem | null;
+}
+
+export default function AdminAddMedicineModal({
+  isOpen,
+  onClose,
+  onSave,
+  editingMedicine,
+}: AdminAddMedicineModalProps) {
+  const [tradeName, setTradeName] = useState("");
+  const [genericName, setGenericName] = useState("");
+  const [manufacturer, setManufacturer] = useState("");
+  const [dosageForm, setDosageForm] = useState("ট্যাবলেট");
+  const [strength, setStrength] = useState("");
+  const [mrp, setMrp] = useState("");
+  const [discountPct, setDiscountPct] = useState("5");
+  const [notes, setNotes] = useState("");
+  const [isInstantPublish, setIsInstantPublish] = useState(true);
+
+  // Populate fields when editing
+  useEffect(() => {
+    if (editingMedicine) {
+      setTradeName(editingMedicine.tradeName);
+      setGenericName(editingMedicine.genericName);
+      setManufacturer(editingMedicine.manufacturer);
+      setDosageForm(editingMedicine.dosageForm);
+      setStrength(editingMedicine.strength);
+      setMrp(editingMedicine.mrp.toString());
+      setDiscountPct(editingMedicine.discountPct.toString());
+      setNotes(editingMedicine.notes || "");
+      setIsInstantPublish(editingMedicine.status === "live");
+    } else {
+      setTradeName("");
+      setGenericName("");
+      setManufacturer("");
+      setDosageForm("ট্যাবলেট");
+      setStrength("");
+      setMrp("");
+      setDiscountPct("5");
+      setNotes("");
+      setIsInstantPublish(true);
+    }
+  }, [editingMedicine, isOpen]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tradeName || !genericName || !strength || !mrp) return;
+
+    const parsedMrp = parseFloat(mrp) || 0;
+    const parsedDiscount = parseFloat(discountPct) || 0;
+
+    let iconType: "pill" | "liquid" | "injection" = "pill";
+    if (dosageForm.includes("ক্যাপসুল") || dosageForm.includes("সিরাপ") || dosageForm.toLowerCase().includes("syrup") || dosageForm.toLowerCase().includes("capsule")) {
+      iconType = "liquid";
+    } else if (dosageForm.includes("ইনজেকশন") || dosageForm.toLowerCase().includes("injection")) {
+      iconType = "injection";
+    }
+
+    onSave({
+      tradeName,
+      genericName,
+      manufacturer: manufacturer || "Square Pharma",
+      dosageForm,
+      strength,
+      mrp: parsedMrp,
+      mrpFormatted: `৳ ${parsedMrp.toFixed(2)}`,
+      discountPct: parsedDiscount,
+      status: isInstantPublish ? "live" : "pending",
+      iconType,
+      notes,
+    });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-space-md bg-inverse-surface/40 backdrop-blur-sm transition-all duration-300"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-modal-title"
+    >
+      <div className="bg-surface-container-lowest w-full max-w-3xl rounded-xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col border border-[var(--color-border)] animate-in fade-in zoom-in-95 duration-200">
+        {/* Modal Header */}
+        <div className="px-space-lg py-space-md bg-surface-container-low flex items-center justify-between border-b border-[var(--color-border)]">
+          <div className="flex items-center gap-space-xs">
+            <span className="p-2 rounded-lg bg-primary-container text-on-primary-container">
+              <span className="material-symbols-outlined text-xl">
+                {editingMedicine ? "edit_note" : "add_box"}
+              </span>
+            </span>
+            <div className="flex flex-col">
+              <h2
+                id="add-modal-title"
+                className="font-headline-md text-headline-md font-bold text-on-surface"
+              >
+                {editingMedicine ? "ওষুধের তথ্য সম্পাদনা করুন" : "নতুন ওষুধ নথিভুক্ত করুন"}
+              </h2>
+              <span className="font-label-sm text-label-sm text-on-surface-variant">
+                ক্লিনিক্যাল ড্রাগ ম্যানেজমেন্ট রেজিস্ট্রি এন্ট্রি
+              </span>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-all cursor-pointer"
+            type="button"
+            aria-label="বন্ধ করুন"
+          >
+            <span className="material-symbols-outlined text-xl">close</span>
+          </button>
+        </div>
+
+        {/* Modal Form */}
+        <form onSubmit={handleSubmit} className="p-space-lg overflow-y-auto flex flex-col gap-space-md">
+          {/* Row 1: Trade Name & Generic Name */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+            <div className="flex flex-col gap-space-xs">
+              <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
+                <span>ওষুধের নাম (Trade Name) *</span>
+                <span className="text-tertiary font-label-sm text-label-sm">বাধ্যতামূলক</span>
+              </label>
+              <input
+                value={tradeName}
+                onChange={(e) => setTradeName(e.target.value)}
+                className="px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
+                placeholder="যেমন: Napa One"
+                required
+                type="text"
+              />
+            </div>
+
+            <div className="flex flex-col gap-space-xs">
+              <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
+                <span>জেনেরিক নাম (Generic Name) *</span>
+                <span className="text-tertiary font-label-sm text-label-sm">বাধ্যতামূলক</span>
+              </label>
+              <input
+                value={genericName}
+                onChange={(e) => setGenericName(e.target.value)}
+                className="px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
+                placeholder="যেমন: Paracetamol 1000mg"
+                required
+                type="text"
+              />
+            </div>
+          </div>
+
+          {/* Row 2: Manufacturer, Form & Strength */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md">
+            <div className="flex flex-col gap-space-xs">
+              <label className="font-label-md text-label-md text-on-surface font-semibold">
+                প্রস্তুতকারক কোম্পানি *
+              </label>
+              <select
+                value={manufacturer}
+                onChange={(e) => setManufacturer(e.target.value)}
+                className="px-space-sm py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none border border-transparent focus:border-primary/30 cursor-pointer"
+                required
+              >
+                <option value="">কোম্পানি নির্বাচন করুন</option>
+                <option value="Beximco Pharma">Beximco Pharma</option>
+                <option value="Square Pharma">Square Pharma</option>
+                <option value="Incepta Pharma">Incepta Pharma</option>
+                <option value="Renata Ltd">Renata Ltd</option>
+                <option value="Acme Laboratories">Acme Laboratories</option>
+                <option value="Eskayef (SK+F)">Eskayef (SK+F)</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-space-xs">
+              <label className="font-label-md text-label-md text-on-surface font-semibold">
+                ডোজ ফরম (Form) *
+              </label>
+              <select
+                value={dosageForm}
+                onChange={(e) => setDosageForm(e.target.value)}
+                className="px-space-sm py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none border border-transparent focus:border-primary/30 cursor-pointer"
+                required
+              >
+                <option value="ট্যাবলেট">ট্যাবলেট (Tablet)</option>
+                <option value="ক্যাপসুল">ক্যাপসুল (Capsule)</option>
+                <option value="সিরাপ">সিরাপ (Syrup)</option>
+                <option value="ইনজেকশন">ইনজেকশন (Injection)</option>
+                <option value="ড্রপ">আই/ইয়ার ড্রপস</option>
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-space-xs">
+              <label className="font-label-md text-label-md text-on-surface font-semibold">
+                শক্তি / মাত্রা (Strength) *
+              </label>
+              <input
+                value={strength}
+                onChange={(e) => setStrength(e.target.value)}
+                className="px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
+                placeholder="যেমন: 1000 mg"
+                required
+                type="text"
+              />
+            </div>
+          </div>
+
+          {/* Row 3: MRP & Discount */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
+            <div className="flex flex-col gap-space-xs">
+              <label className="font-label-md text-label-md text-on-surface font-semibold">
+                সর্বোচ্চ খুচরা মূল্য (MRP ৳) *
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">
+                  ৳
+                </span>
+                <input
+                  value={mrp}
+                  onChange={(e) => setMrp(e.target.value)}
+                  className="w-full pl-8 pr-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
+                  placeholder="4.00"
+                  required
+                  step="0.01"
+                  type="number"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-space-xs">
+              <label className="font-label-md text-label-md text-on-surface font-semibold">
+                ফার্মেসি ডিসকাউন্ট (%)
+              </label>
+              <div className="relative">
+                <input
+                  value={discountPct}
+                  onChange={(e) => setDiscountPct(e.target.value)}
+                  className="w-full px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
+                  placeholder="5"
+                  type="number"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">
+                  %
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Row 4: Clinical & Safety Notes */}
+          <div className="flex flex-col gap-space-xs">
+            <label className="font-label-md text-label-md text-on-surface font-semibold">
+              বিস্তারিত বিবরণ ও নির্দেশনা (Clinical & Safety Notes)
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full p-space-md rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
+              placeholder="ওষুধ খাওয়ার নিয়ম, পার্শ্বপ্রতিক্রিয়া এবং সতর্কবার্তা বাংলা বা ইংরেজিতে লিখুন..."
+              rows={3}
+            />
+          </div>
+
+          {/* Row 5: Immediate Publish */}
+          <div className="p-space-sm rounded-xl bg-surface-container-low flex items-center justify-between border border-[var(--color-border)]">
+            <div className="flex items-center gap-space-xs">
+              <input
+                id="immediate-verify"
+                checked={isInstantPublish}
+                onChange={(e) => setIsInstantPublish(e.target.checked)}
+                className="rounded accent-primary w-4 h-4 cursor-pointer"
+                type="checkbox"
+              />
+              <label
+                htmlFor="immediate-verify"
+                className="font-label-sm text-label-sm text-on-surface cursor-pointer select-none font-medium"
+              >
+                তাত্ক্ষণিকভাবে DGDA রেজিস্ট্রি অনুযায়ী লাইভ করুন (Instant Live Publish)
+              </label>
+            </div>
+            <span className="text-tertiary font-label-sm text-label-sm font-semibold">
+              স্বয়ংক্রিয় অডিট সক্রিয়
+            </span>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-space-sm pt-space-xs">
+            <button
+              onClick={onClose}
+              className="px-space-lg py-2.5 rounded-xl bg-surface-container text-on-surface font-label-lg text-label-lg hover:bg-surface-container-high transition-all cursor-pointer font-medium"
+              type="button"
+            >
+              বাতিল (Cancel)
+            </button>
+
+            <button
+              className="flex items-center gap-space-xs px-space-xl py-2.5 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg shadow-sm hover:bg-primary-container active:scale-[0.98] transition-all cursor-pointer font-semibold"
+              type="submit"
+            >
+              <span className="material-symbols-outlined text-xl">save</span>
+              <span>{editingMedicine ? "আপডেট সংরক্ষণ করুন" : "সংরক্ষণ করুন (Save Medicine)"}</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
