@@ -14,6 +14,7 @@ import {
 } from "@/lib/auth";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
+import { t } from "@/lib/i18n";
 
 function LoginForm() {
   const router = useRouter();
@@ -26,7 +27,7 @@ function LoginForm() {
 
   useEffect(() => {
     if (searchParams.get("error") === "unauthorized") {
-      setErrorMessage("This account is not authorized.");
+      setErrorMessage(t("auth.unauthorizedError"));
     }
   }, [searchParams]);
 
@@ -47,7 +48,7 @@ function LoginForm() {
       const user = await loginWithGoogle();
       if (user.email !== ADMIN_EMAIL) {
         await logout();
-        setErrorMessage("This account is not authorized.");
+        setErrorMessage(t("auth.unauthorizedError"));
         return;
       }
       router.replace("/admin");
@@ -70,7 +71,7 @@ function LoginForm() {
       const user = await loginWithEmail(email, password);
       if (user.email !== ADMIN_EMAIL) {
         await logout();
-        setErrorMessage("This account is not authorized.");
+        setErrorMessage(t("auth.unauthorizedError"));
         return;
       }
       router.replace("/admin");
@@ -91,9 +92,9 @@ function LoginForm() {
         >
           Rx
         </div>
-        <h1 className="text-xl font-bold text-on-surface">অ্যাডমিন লগইন</h1>
+        <h1 className="text-xl font-bold text-on-surface">{t("auth.loginTitle")}</h1>
         <p className="text-xs sm:text-sm text-on-surface-variant">
-          OushodBox প্রাইভেট ম্যানেজমেন্ট কনসোল
+          {t("auth.loginSubtitle")}
         </p>
       </div>
 
@@ -133,14 +134,14 @@ function LoginForm() {
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
           />
         </svg>
-        <span>Google দিয়ে সাইন ইন</span>
+        <span>{t("auth.googleSignIn")}</span>
       </button>
 
       {/* Divider */}
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-[var(--color-border)]" />
         <span className="text-[11px] text-on-surface-variant uppercase font-medium">
-          অথবা ইমেইল/পাসওয়ার্ড
+          {t("auth.orDivider")}
         </span>
         <div className="flex-1 h-px bg-[var(--color-border)]" />
       </div>
@@ -148,7 +149,7 @@ function LoginForm() {
       {/* Email/Password Fallback */}
       <form onSubmit={handleEmailLogin} className="flex flex-col gap-4">
         <Input
-          label="অ্যাডমিন ইমেইল"
+          label={t("auth.emailLabel")}
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -158,7 +159,7 @@ function LoginForm() {
         />
 
         <Input
-          label="পাসওয়ার্ড"
+          label={t("auth.passwordLabel")}
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -175,7 +176,7 @@ function LoginForm() {
           isLoading={isLoading}
           className="w-full mt-1"
         >
-          লগইন করুন
+          {t("auth.signInButton")}
         </Button>
       </form>
 
@@ -186,7 +187,7 @@ function LoginForm() {
           className="text-xs text-on-surface-variant hover:text-primary transition-colors font-medium inline-flex items-center gap-1"
         >
           <span className="material-symbols-outlined text-sm">arrow_back</span>
-          <span>মূল পাতায় ফিরে যান</span>
+          <span>{t("auth.backToHome")}</span>
         </Link>
       </div>
     </div>
@@ -198,10 +199,11 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
       <Suspense
         fallback={
-          <div className="flex items-center justify-center p-8">
-            <span className="material-symbols-outlined text-3xl text-primary animate-spin">
+          <div className="flex flex-col items-center gap-3 text-on-surface-variant">
+            <span className="material-symbols-outlined text-4xl text-primary animate-spin">
               progress_activity
             </span>
+            <span className="text-sm font-medium">{t("auth.checkingSession")}</span>
           </div>
         }
       >

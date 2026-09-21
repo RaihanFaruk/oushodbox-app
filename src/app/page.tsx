@@ -24,6 +24,7 @@ import {
 import { getMedicines as getCachedMedicines, saveMedicines as setCachedMedicines } from "@/lib/pwa/db";
 import { subscribeToAuthChanges, isAuthorizedAdmin } from "@/lib/auth";
 import { toBengaliNumeral, shareToWhatsApp } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 import type { DatabaseMedicine, AdminMedicineItem } from "@/types";
 
 export default function HomePage() {
@@ -178,10 +179,10 @@ export default function HomePage() {
             </div>
             <div>
               <span className="font-headline-sm text-headline-sm font-bold text-on-surface">
-                ঔষধBox
+                {t("common.appName")}
               </span>
               <span className="hidden sm:inline-block ml-2 text-xs text-on-surface-variant font-medium">
-                ব্যক্তিগত ওষুধ ও মূল্য রেফারেন্স
+                {t("common.appSubtitle")}
               </span>
             </div>
           </div>
@@ -202,7 +203,7 @@ export default function HomePage() {
                 }`}
               />
               <span className="hidden xs:inline">
-                {isOnline ? "অনলাইন সিঙ্কড" : "অফলাইন ক্যাশ"}
+                {isOnline ? t("common.online") : t("common.offline")}
               </span>
             </div>
 
@@ -219,7 +220,7 @@ export default function HomePage() {
               className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all shadow-xs"
             >
               <span className="material-symbols-outlined text-base">add</span>
-              <span>নতুন ওষুধ</span>
+              <span>{t("home.addNewMedicine")}</span>
             </button>
           </div>
         </header>
@@ -244,14 +245,14 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <h1 className="text-xl sm:text-2xl font-bold text-on-surface">
-                  ওষুধ খুঁজুন
+                  {t("home.title")}
                 </h1>
                 <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">
-                  নাম, জেনেরিক বা কোম্পানি দিয়ে তাৎক্ষণিক খুঁজুন (বাংলা বা ইংরেজি)
+                  {t("home.subtitle")}
                 </p>
               </div>
               <div className="text-xs text-on-surface-variant font-medium bg-surface-container-low px-3 py-1.5 rounded-lg self-start sm:self-auto border border-[var(--color-border)]">
-                মোট সংরক্ষিত:{" "}
+                {t("home.totalSaved")}{" "}
                 <span className="font-bold text-primary">
                   {toBengaliNumeral(totalCount)}
                 </span>
@@ -286,7 +287,7 @@ export default function HomePage() {
 
             {/* Fast Quick Filter Tags */}
             <div className="flex items-center gap-2 flex-wrap text-xs text-on-surface-variant">
-              <span className="font-medium text-on-surface">দ্রুত শর্টকাট:</span>
+              <span className="font-medium text-on-surface">{t("home.shortcutsLabel")}</span>
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
@@ -296,28 +297,28 @@ export default function HomePage() {
                     : "bg-surface-container-low border-[var(--color-border)] hover:bg-surface-container"
                 }`}
               >
-                সকল ওষুধ
+                {t("home.allMedicines")}
               </button>
               <button
                 type="button"
                 onClick={() => setSearchQuery("ট্যাবলেট")}
                 className="px-2.5 py-1 rounded-lg bg-surface-container-low border border-[var(--color-border)] hover:bg-surface-container transition-all"
               >
-                ট্যাবলেট
+                {t("home.tablet")}
               </button>
               <button
                 type="button"
                 onClick={() => setSearchQuery("ক্যাপসুল")}
                 className="px-2.5 py-1 rounded-lg bg-surface-container-low border border-[var(--color-border)] hover:bg-surface-container transition-all"
               >
-                ক্যাপসুল
+                {t("home.capsule")}
               </button>
               <button
                 type="button"
                 onClick={() => setSearchQuery("সিরাপ")}
                 className="px-2.5 py-1 rounded-lg bg-surface-container-low border border-[var(--color-border)] hover:bg-surface-container transition-all"
               >
-                সিরাপ
+                {t("home.syrup")}
               </button>
             </div>
           </section>

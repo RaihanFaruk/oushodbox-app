@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getPriceHistory } from "@/lib/firestore/medicines";
 import { toBengaliNumeral } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 import type { PriceHistoryEntry } from "@/types";
 
 interface MedicinePriceHistoryProps {
@@ -67,11 +68,11 @@ export default function MedicinePriceHistory({ medicineId }: MedicinePriceHistor
             history
           </span>
           <h3 className="font-bold text-sm sm:text-base text-on-surface">
-            দামের ইতিহাস
+            {t("medicineDetail.priceHistoryTitle")}
           </h3>
         </div>
         <span className="text-[11px] font-medium text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">
-          {toBengaliNumeral(history.length)}টি রেকর্ড
+          {t("common.recordsCount", { count: toBengaliNumeral(history.length) })}
         </span>
       </div>
 
@@ -92,7 +93,7 @@ export default function MedicinePriceHistory({ medicineId }: MedicinePriceHistor
               diffText = `-৳${toBengaliNumeral(Math.abs(diff).toFixed(2))}`;
             } else {
               changeType = "same";
-              diffText = "অপরিবর্তিত";
+              diffText = t("medicineDetail.priceUnchanged");
             }
           }
 
@@ -107,9 +108,13 @@ export default function MedicinePriceHistory({ medicineId }: MedicinePriceHistor
                   {formatDateBn(entry.changedAt)}
                 </span>
                 {idx === 0 ? (
-                  <span className="text-[10px] text-primary font-medium">বর্তমান মূল্য</span>
+                  <span className="text-[10px] text-primary font-medium">
+                    {t("medicineDetail.currentPrice")}
+                  </span>
                 ) : (
-                  <span className="text-[10px] text-on-surface-variant">পূর্বের মূল্য</span>
+                  <span className="text-[10px] text-on-surface-variant">
+                    {t("medicineDetail.previousPrice")}
+                  </span>
                 )}
               </div>
 
@@ -133,7 +138,7 @@ export default function MedicinePriceHistory({ medicineId }: MedicinePriceHistor
                 )}
                 {changeType === "initial" && (
                   <span className="text-[10px] text-on-surface-variant bg-surface-container px-1.5 py-0.5 rounded">
-                    শুরুর মূল্য
+                    {t("medicineDetail.initialPrice")}
                   </span>
                 )}
               </div>

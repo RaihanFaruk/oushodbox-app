@@ -8,6 +8,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ADMIN_EMAIL } from "@/lib/auth/admin";
+import { t } from "@/lib/i18n";
 
 const navItems = [
   { href: "/", icon: "home", labelBn: "হোম ড্যাশবোর্ড" },
@@ -29,7 +30,7 @@ export default function Sidebar() {
         </div>
         <div className="flex flex-col">
           <span className="font-bold text-sm tracking-tight text-on-surface">
-            ঔষধBox
+            {t("common.appName")}
           </span>
           <span className="text-[11px] text-on-surface-variant leading-tight">
             মেডিসিন ওয়ার্কস্পেস
@@ -74,7 +75,7 @@ export default function Sidebar() {
               {ADMIN_EMAIL}
             </span>
             <span className="text-[10px] text-on-surface-variant">
-              প্রাইভেট ওয়ার্কস্পেস
+              {t("admin.privateWorkspaceBadge")}
             </span>
           </div>
         </div>
