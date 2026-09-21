@@ -342,7 +342,7 @@ export default function MedicineDatabasePage() {
           />
 
           {/* Interactive Results Area */}
-          {!isAuthChecking && !isAuthenticated && medicines.length === 0 ? (
+          {!isAuthChecking && !isAuthenticated ? (
             <div className="p-8 sm:p-12 text-center rounded-2xl bg-surface-container-lowest border border-[var(--color-border)] shadow-xs flex flex-col items-center justify-center max-w-md mx-auto w-full my-8">
               <div className="w-14 h-14 rounded-2xl bg-surface-container-high flex items-center justify-center text-primary mb-4">
                 <span className="material-symbols-outlined text-3xl">lock</span>

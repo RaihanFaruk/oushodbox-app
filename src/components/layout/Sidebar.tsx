@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ADMIN_EMAIL } from "@/lib/auth/admin";
 
 const navItems = [
   { href: "/", icon: "home", labelBn: "হোম ড্যাশবোর্ড" },
@@ -70,7 +71,7 @@ export default function Sidebar() {
           <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
           <div className="flex flex-col min-w-0">
             <span className="text-[11px] font-semibold text-on-surface truncate">
-              mehj49966@gmail.com
+              {ADMIN_EMAIL}
             </span>
             <span className="text-[10px] text-on-surface-variant">
               প্রাইভেট ওয়ার্কস্পেস

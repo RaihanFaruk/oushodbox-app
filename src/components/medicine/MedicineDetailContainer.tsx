@@ -92,8 +92,8 @@ export default function MedicineDetailContainer({ id }: MedicineDetailContainerP
     );
   }
 
-  // If signed out and no cached record exists, show clean signed-out state
-  if (!isAuthenticated && !monograph) {
+  // If signed out, strictly show clean signed-out state — never show cached medicine data
+  if (!isAuthenticated) {
     return (
       <div className="flex min-h-screen bg-surface font-body-md text-body-md text-on-surface">
         <Sidebar />

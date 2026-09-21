@@ -13,6 +13,7 @@ import {
   subscribeToAuthChanges,
   logout,
   ADMIN_EMAIL,
+  isAdminEmail,
   type User,
 } from "@/lib/auth";
 
@@ -34,7 +35,7 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
         return;
       }
 
-      if (user.email !== ADMIN_EMAIL) {
+      if (!isAdminEmail(user.email)) {
         await logout();
         setCurrentUser(null);
         setIsChecking(false);
@@ -65,7 +66,7 @@ export default function AdminAuthGuard({ children }: AdminAuthGuardProps) {
   }
 
   // Not authorized or not signed in — redirect is in progress
-  if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
+  if (!currentUser || !isAdminEmail(currentUser.email)) {
     return null;
   }
 

@@ -18,13 +18,14 @@ import { clearMedicines } from "@/lib/pwa/db";
 
 export type { User, Unsubscribe };
 
-export const ADMIN_EMAIL = "mehj49966@gmail.com";
+export { ADMIN_EMAIL, isAdminEmail } from "@/lib/auth/admin";
+import { ADMIN_EMAIL, isAdminEmail } from "@/lib/auth/admin";
 
 /**
  * Check if the user matches the single authorized administrator account.
  */
 export function isAuthorizedAdmin(user: User | null): boolean {
-  return Boolean(user && user.email === ADMIN_EMAIL);
+  return Boolean(user && isAdminEmail(user.email));
 }
 
 /**

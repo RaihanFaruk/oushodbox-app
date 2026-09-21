@@ -33,6 +33,7 @@ export default function HomePage() {
   const [isOnline, setIsOnline] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAuthAdmin, setIsAuthAdmin] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   // Quick Add Modal state
@@ -86,11 +87,13 @@ export default function HomePage() {
     const unsubscribe = subscribeToAuthChanges((user) => {
       const email = user?.email || null;
       setUserEmail(email);
+      const authorized = isAuthorizedAdmin(user);
+      setIsAuthAdmin(authorized);
       setIsAuthChecking(false);
-      if (isAuthorizedAdmin(user)) {
+      if (authorized) {
         fetchMedicines();
       } else {
-        // Unauthenticated — strictly block cached medicine access
+        // Unauthenticated or unauthorized — strictly block cached medicine access
         setMedicines([]);
         setIsLoading(false);
       }
@@ -413,7 +416,7 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
-            ) : !isAuthChecking && !userEmail && totalCount === 0 ? (
+            ) : !isAuthChecking && !isAuthAdmin ? (
               /* Signed Out State */
               <div className="p-8 sm:p-12 text-center rounded-2xl bg-surface-container-lowest border border-[var(--color-border)] shadow-xs flex flex-col items-center justify-center gap-3">
                 <div className="w-14 h-14 rounded-2xl bg-surface-container-low flex items-center justify-center text-primary">

@@ -6,6 +6,7 @@
  */
 
 import { toBengaliNumeral } from "@/lib/utils";
+import { ADMIN_EMAIL } from "@/lib/auth/admin";
 
 interface AdminHeroBannerProps {
   totalDrugs: number;
@@ -18,7 +19,7 @@ export default function AdminHeroBanner({
   totalDrugs,
   pendingCount,
   onLogout,
-  userEmail = "mehj49966@gmail.com",
+  userEmail = ADMIN_EMAIL,
 }: AdminHeroBannerProps) {
   return (
     <div className="rounded-2xl bg-surface p-5 sm:p-6 border border-[var(--color-border)] shadow-sm">
