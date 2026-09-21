@@ -64,6 +64,16 @@ export interface PriceHistoryEntry {
   note?: string;
 }
 
+export interface MedicinePrivateData {
+  purchasePrice?: number;
+  margin?: number;
+  supplierNote?: string;
+  costPrice?: number;
+  supplierName?: string;
+  internalNote?: string;
+  updatedAt?: string;
+}
+
 export type MedicineViewMode = "grid" | "table";
 export type MedicineSimState = "normal" | "empty" | "skeleton";
 

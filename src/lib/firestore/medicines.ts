@@ -28,6 +28,7 @@ import type {
   AdminMedicineItem,
   MedicineMonograph,
   PriceHistoryEntry,
+  MedicinePrivateData,
 } from "@/types";
 
 export const MEDICINES_COLLECTION = "medicines";
@@ -246,19 +247,99 @@ export async function getMedicineById(id: string): Promise<DatabaseMedicine | nu
   }
 }
 
+const PRIVATE_FIELD_KEYS = [
+  "purchasePrice",
+  "margin",
+  "supplierNote",
+  "costPrice",
+  "supplierName",
+  "internalNote",
+] as const;
+
+/**
+ * Strips confidential/internal business fields from top-level document payload
+ * to prevent accidental exposure via public read operations.
+ */
+function extractPrivateFields(payload: Record<string, any>): {
+  publicPayload: Record<string, any>;
+  privateData: MedicinePrivateData | null;
+} {
+  const publicPayload = { ...payload };
+  const privateData: Record<string, any> = {};
+  let hasPrivate = false;
+
+  for (const key of PRIVATE_FIELD_KEYS) {
+    if (key in publicPayload) {
+      if (publicPayload[key] !== undefined) {
+        privateData[key] = publicPayload[key];
+        hasPrivate = true;
+      }
+      delete publicPayload[key];
+    }
+  }
+
+  return {
+    publicPayload,
+    privateData: hasPrivate ? (privateData as MedicinePrivateData) : null,
+  };
+}
+
+/**
+ * Fetch confidential/cost details for a medicine from its private subcollection.
+ * Only readable by authenticated admin per Firestore security rules.
+ */
+export async function getMedicinePrivateData(
+  medicineId: string
+): Promise<MedicinePrivateData | null> {
+  if (!medicineId) return null;
+  try {
+    const privRef = doc(db, MEDICINES_COLLECTION, medicineId, "private", "data");
+    const snap = await getDoc(privRef);
+    if (snap.exists()) {
+      return snap.data() as MedicinePrivateData;
+    }
+    return null;
+  } catch (err) {
+    console.warn(`[Firestore] Failed to read private data for ${medicineId}:`, err);
+    return null;
+  }
+}
+
+/**
+ * Save confidential/cost details for a medicine into its private subcollection.
+ * Only writable by authenticated admin per Firestore security rules.
+ */
+export async function saveMedicinePrivateData(
+  medicineId: string,
+  privateData: MedicinePrivateData
+): Promise<void> {
+  if (!medicineId) return;
+  const privRef = doc(db, MEDICINES_COLLECTION, medicineId, "private", "data");
+  await setDoc(
+    privRef,
+    {
+      ...privateData,
+      updatedAt: new Date().toISOString(),
+    },
+    { merge: true }
+  );
+}
+
 /**
  * Add a new medicine to Firestore.
  * If data.id is provided, sets the document with that custom ID (e.g. slug).
  * Otherwise, auto-generates a new Firestore document ID.
+ * Confidential fields are stripped from top-level and stored in private/data.
  */
 export async function addMedicine(
   data: MedicinePayload & { id?: string }
 ): Promise<DatabaseMedicine & Record<string, any>> {
   try {
-    const { id, ...payload } = data;
-    const timestamp = payload.updatedTimestamp || Date.now();
+    const { id, ...rawPayload } = data;
+    const { publicPayload, privateData } = extractPrivateFields(rawPayload);
+    const timestamp = publicPayload.updatedTimestamp || Date.now();
     const cleanPayload = {
-      ...payload,
+      ...publicPayload,
       updatedTimestamp: timestamp,
     };
 
@@ -273,9 +354,18 @@ export async function addMedicine(
       finalId = docRef.id;
     }
 
+    // If private fields were supplied, store in private subcollection
+    if (privateData) {
+      try {
+        await saveMedicinePrivateData(finalId, privateData);
+      } catch (privErr) {
+        console.warn(`[Firestore] Failed to save private data for ${finalId}:`, privErr);
+      }
+    }
+
     // Write initial price history entry in subcollection
     try {
-      const initialPrice = Number(cleanPayload.unitPrice ?? (cleanPayload as any).mrp ?? 0);
+      const initialPrice = Number((cleanPayload as any).unitPrice ?? (cleanPayload as any).mrp ?? 0);
       const historyCol = collection(db, MEDICINES_COLLECTION, finalId, "priceHistory");
       await addDoc(historyCol, {
         price: initialPrice,
@@ -297,6 +387,7 @@ export async function addMedicine(
 
 /**
  * Update an existing medicine in Firestore by its ID.
+ * Any private/cost fields are routed to the private/data subcollection.
  */
 export async function updateMedicine(
   id: string,
@@ -319,9 +410,10 @@ export async function updateMedicine(
       console.warn(`[Firestore] Could not fetch previous price for ${id}:`, e);
     }
 
+    const { publicPayload, privateData } = extractPrivateFields(data);
     const updatePayload: Record<string, any> = {
-      ...data,
-      updatedTimestamp: data.updatedTimestamp || Date.now(),
+      ...publicPayload,
+      updatedTimestamp: publicPayload.updatedTimestamp || Date.now(),
     };
 
     // Prevent overwriting the document ID inside the document data
@@ -331,9 +423,19 @@ export async function updateMedicine(
 
     await updateDoc(docRef, updatePayload);
 
+    // If private fields were supplied, update them in private subcollection
+    if (privateData) {
+      try {
+        await saveMedicinePrivateData(id, privateData);
+      } catch (privErr) {
+        console.warn(`[Firestore] Failed to update private data for ${id}:`, privErr);
+      }
+    }
+
     // If unitPrice changed, append a new entry to priceHistory
-    const hasNewPrice = data.unitPrice !== undefined || data.mrp !== undefined;
-    const newPrice = Number(data.unitPrice ?? data.mrp ?? oldPrice);
+    const anyPayload = publicPayload as any;
+    const hasNewPrice = anyPayload.unitPrice !== undefined || anyPayload.mrp !== undefined;
+    const newPrice = Number(anyPayload.unitPrice ?? anyPayload.mrp ?? oldPrice);
 
     if (hasNewPrice && oldPrice !== null && newPrice !== oldPrice) {
       try {
