@@ -17,11 +17,18 @@ import {
   query,
   where,
   orderBy,
+  serverTimestamp,
   DocumentData,
   QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import type { DatabaseMedicine, AdminMedicineItem, MedicineMonograph } from "@/types";
+import { ADMIN_EMAIL } from "@/lib/auth/admin";
+import type {
+  DatabaseMedicine,
+  AdminMedicineItem,
+  MedicineMonograph,
+  PriceHistoryEntry,
+} from "@/types";
 
 export const MEDICINES_COLLECTION = "medicines";
 
@@ -255,15 +262,33 @@ export async function addMedicine(
       updatedTimestamp: timestamp,
     };
 
-    if (id && id.trim().length > 0) {
-      const docRef = doc(db, MEDICINES_COLLECTION, id.trim());
+    let finalId = id && id.trim().length > 0 ? id.trim() : "";
+
+    if (finalId.length > 0) {
+      const docRef = doc(db, MEDICINES_COLLECTION, finalId);
       await setDoc(docRef, cleanPayload);
-      return mapDocToMedicine(cleanPayload, id.trim());
     } else {
       const colRef = collection(db, MEDICINES_COLLECTION);
       const docRef = await addDoc(colRef, cleanPayload);
-      return mapDocToMedicine(cleanPayload, docRef.id);
+      finalId = docRef.id;
     }
+
+    // Write initial price history entry in subcollection
+    try {
+      const initialPrice = Number(cleanPayload.unitPrice ?? (cleanPayload as any).mrp ?? 0);
+      const historyCol = collection(db, MEDICINES_COLLECTION, finalId, "priceHistory");
+      await addDoc(historyCol, {
+        price: initialPrice,
+        currency: "BDT",
+        changedAt: serverTimestamp(),
+        changedBy: ADMIN_EMAIL,
+        note: "Initial price",
+      });
+    } catch (historyErr) {
+      console.warn(`[Firestore] Failed to record initial price history for ${finalId}:`, historyErr);
+    }
+
+    return mapDocToMedicine(cleanPayload, finalId);
   } catch (error) {
     console.error("[Firestore] Failed to add medicine:", error);
     throw error;
@@ -281,6 +306,19 @@ export async function updateMedicine(
 
   try {
     const docRef = doc(db, MEDICINES_COLLECTION, id);
+
+    // Retrieve old price to determine if price has changed
+    let oldPrice: number | null = null;
+    try {
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const docData = docSnap.data();
+        oldPrice = Number(docData.unitPrice ?? docData.mrp ?? 0);
+      }
+    } catch (e) {
+      console.warn(`[Firestore] Could not fetch previous price for ${id}:`, e);
+    }
+
     const updatePayload: Record<string, any> = {
       ...data,
       updatedTimestamp: data.updatedTimestamp || Date.now(),
@@ -288,12 +326,114 @@ export async function updateMedicine(
 
     // Prevent overwriting the document ID inside the document data
     delete updatePayload.id;
+    // Backward compatibility: stop writing previousPrice to doc (subcollection is source of truth)
+    delete updatePayload.previousPrice;
 
     await updateDoc(docRef, updatePayload);
+
+    // If unitPrice changed, append a new entry to priceHistory
+    const hasNewPrice = data.unitPrice !== undefined || data.mrp !== undefined;
+    const newPrice = Number(data.unitPrice ?? data.mrp ?? oldPrice);
+
+    if (hasNewPrice && oldPrice !== null && newPrice !== oldPrice) {
+      try {
+        const historyCol = collection(db, MEDICINES_COLLECTION, id, "priceHistory");
+        await addDoc(historyCol, {
+          price: newPrice,
+          currency: "BDT",
+          changedAt: serverTimestamp(),
+          changedBy: ADMIN_EMAIL,
+          note: `Price updated from ${oldPrice} to ${newPrice}`,
+        });
+      } catch (historyErr) {
+        console.warn(`[Firestore] Failed to append price history for ${id}:`, historyErr);
+      }
+    }
+
     return true;
   } catch (error) {
     console.error(`[Firestore] Failed to update medicine (${id}):`, error);
     throw error;
+  }
+}
+
+/**
+ * Fetch price history entries for a given medicine, ordered by changedAt descending.
+ */
+export async function getPriceHistory(medicineId: string): Promise<PriceHistoryEntry[]> {
+  if (!medicineId) return [];
+
+  try {
+    const colRef = collection(db, MEDICINES_COLLECTION, medicineId, "priceHistory");
+    const q = query(colRef, orderBy("changedAt", "desc"));
+    const snapshot = await getDocs(q);
+
+    return snapshot.docs.map((docSnap) => {
+      const data = docSnap.data();
+      let changedAtStr = "";
+      if (data.changedAt?.toDate) {
+        changedAtStr = data.changedAt.toDate().toISOString();
+      } else if (data.changedAt instanceof Date) {
+        changedAtStr = data.changedAt.toISOString();
+      } else if (typeof data.changedAt === "string") {
+        changedAtStr = data.changedAt;
+      } else if (typeof data.changedAt === "number") {
+        changedAtStr = new Date(data.changedAt).toISOString();
+      } else {
+        changedAtStr = new Date().toISOString();
+      }
+
+      return {
+        id: docSnap.id,
+        price: Number(data.price ?? 0),
+        currency: data.currency || "BDT",
+        changedAt: changedAtStr,
+        changedBy: data.changedBy || "",
+        note: data.note || "",
+      };
+    });
+  } catch (error) {
+    // If index or ordering failed, attempt un-ordered fallback
+    try {
+      const colRef = collection(db, MEDICINES_COLLECTION, medicineId, "priceHistory");
+      const snapshot = await getDocs(colRef);
+      const items = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
+        let changedAtStr = "";
+        let timestamp = 0;
+        if (data.changedAt?.toDate) {
+          const d = data.changedAt.toDate();
+          changedAtStr = d.toISOString();
+          timestamp = d.getTime();
+        } else if (data.changedAt instanceof Date) {
+          changedAtStr = data.changedAt.toISOString();
+          timestamp = data.changedAt.getTime();
+        } else if (typeof data.changedAt === "string") {
+          changedAtStr = data.changedAt;
+          timestamp = new Date(data.changedAt).getTime() || 0;
+        } else if (typeof data.changedAt === "number") {
+          changedAtStr = new Date(data.changedAt).toISOString();
+          timestamp = data.changedAt;
+        } else {
+          changedAtStr = new Date().toISOString();
+        }
+
+        return {
+          id: docSnap.id,
+          price: Number(data.price ?? 0),
+          currency: data.currency || "BDT",
+          changedAt: changedAtStr,
+          changedBy: data.changedBy || "",
+          note: data.note || "",
+          _sortTs: timestamp,
+        };
+      });
+      items.sort((a, b) => b._sortTs - a._sortTs);
+      return items.map(({ _sortTs, ...rest }) => rest);
+    } catch (fallbackError) {
+      console.warn(`[Firestore] Failed to fetch price history for ${medicineId}:`, fallbackError);
+      return [];
+    }
   }
 }
 

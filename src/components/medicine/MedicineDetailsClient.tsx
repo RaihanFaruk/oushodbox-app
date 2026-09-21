@@ -13,6 +13,7 @@ import MedicineHeroCard from "./MedicineHeroCard";
 import MedicineWhatsAppDrawer from "./MedicineWhatsAppDrawer";
 import MedicineClinicalTabs from "./MedicineClinicalTabs";
 import MedicineAlternativesCard from "./MedicineAlternativesCard";
+import MedicinePriceHistory from "./MedicinePriceHistory";
 import MedicineClinicalDisclaimer from "./MedicineClinicalDisclaimer";
 import MedicineToast from "./MedicineToast";
 
@@ -109,6 +110,7 @@ export default function MedicineDetailsClient({
 
             {/* Right Column (4 Col): Alternative Equivalent Brands & Safety */}
             <div className="lg:col-span-4 flex flex-col gap-space-md">
+              <MedicinePriceHistory medicineId={monograph.id} />
               <MedicineAlternativesCard
                 monograph={monograph}
                 onCompareBrand={handleCompareBrand}

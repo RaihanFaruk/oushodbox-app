@@ -55,6 +55,15 @@ export interface DatabaseMedicine {
   manufacturerKey: string;       // filter key: 'beximco', 'square', etc.
 }
 
+export interface PriceHistoryEntry {
+  id: string;
+  price: number;
+  currency: string;
+  changedAt: string;
+  changedBy: string;
+  note?: string;
+}
+
 export type MedicineViewMode = "grid" | "table";
 export type MedicineSimState = "normal" | "empty" | "skeleton";
 
