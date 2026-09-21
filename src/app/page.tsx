@@ -22,7 +22,7 @@ import {
   toAdminMedicineItem,
 } from "@/lib/firestore/medicines";
 import { getMedicines as getCachedMedicines, saveMedicines as setCachedMedicines } from "@/lib/pwa/db";
-import { subscribeToAuthChanges } from "@/lib/auth";
+import { subscribeToAuthChanges, isAuthorizedAdmin } from "@/lib/auth";
 import { toBengaliNumeral, shareToWhatsApp } from "@/lib/utils";
 import type { DatabaseMedicine, AdminMedicineItem } from "@/types";
 
@@ -33,6 +33,7 @@ export default function HomePage() {
   const [isOnline, setIsOnline] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   // Quick Add Modal state
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -60,14 +61,6 @@ export default function HomePage() {
     }
   }, []);
 
-  // Auth state listener
-  useEffect(() => {
-    const unsubscribe = subscribeToAuthChanges((user) => {
-      setUserEmail(user?.email || null);
-    });
-    return () => unsubscribe();
-  }, []);
-
   // Fetch medicines from Firestore (fallback to IndexedDB)
   const fetchMedicines = useCallback(async () => {
     setIsLoading(true);
@@ -88,8 +81,29 @@ export default function HomePage() {
     }
   }, []);
 
+  // Auth state listener
   useEffect(() => {
-    fetchMedicines();
+    const unsubscribe = subscribeToAuthChanges((user) => {
+      const email = user?.email || null;
+      setUserEmail(email);
+      setIsAuthChecking(false);
+      if (isAuthorizedAdmin(user)) {
+        fetchMedicines();
+      } else {
+        // Try reading cached data
+        getCachedMedicines()
+          .then((cached) => {
+            if (cached && cached.length > 0) {
+              setMedicines(cached);
+            } else {
+              setMedicines([]);
+            }
+          })
+          .catch(() => setMedicines([]))
+          .finally(() => setIsLoading(false));
+      }
+    });
+    return () => unsubscribe();
   }, [fetchMedicines]);
 
   // Handle Quick Add Medicine
@@ -406,6 +420,28 @@ export default function HomePage() {
                     <div className="w-16 h-5 rounded bg-surface-container-high" />
                   </div>
                 ))}
+              </div>
+            ) : !isAuthChecking && !userEmail && totalCount === 0 ? (
+              /* Signed Out State */
+              <div className="p-8 sm:p-12 text-center rounded-2xl bg-surface-container-lowest border border-[var(--color-border)] shadow-xs flex flex-col items-center justify-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-surface-container-low flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined text-3xl">lock</span>
+                </div>
+                <div className="max-w-md">
+                  <h3 className="text-lg font-bold text-on-surface">
+                    ব্যক্তিগত মেডিসিন ও মূল্য রেফারেন্স
+                  </h3>
+                  <p className="text-xs sm:text-sm text-on-surface-variant mt-1 leading-relaxed">
+                    OushodBox একটি ব্যক্তিগত ওয়ার্কস্পেস। আপনার সংরক্ষিত ওষুধ ও মূল্য তালিকা দেখতে অ্যাডমিন অ্যাকাউন্টে সাইন ইন করুন।
+                  </p>
+                </div>
+                <Link
+                  href="/admin/login"
+                  className="mt-2 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-primary-dark transition-all shadow-xs"
+                >
+                  <span className="material-symbols-outlined text-base">login</span>
+                  <span>অ্যাডমিন লগইন</span>
+                </Link>
               </div>
             ) : totalCount === 0 ? (
               /* Empty State when Database has Zero Medicines */

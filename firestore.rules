@@ -3,17 +3,25 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper function to check if the request is from the authorized administrator
-    function isAdmin() {
-      return request.auth != null && request.auth.token.email == "mehj49966@gmail.com";
+    // Admin email constant — MUST be kept in sync with NEXT_PUBLIC_ADMIN_EMAIL
+    function adminEmail() {
+      return "mehj49966@gmail.com";
     }
 
-    // Medicines collection rules
-    // 1. Anyone can read medicine records from /medicines/{medicineId}
-    // 2. Only the authenticated admin account (mehj49966@gmail.com) can create, update, or delete
+    // Helper function to check if the request is from the authorized administrator
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == adminEmail();
+    }
+
+    // Medicines collection: strictly private, admin-only read & write
     match /medicines/{medicineId} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
+      allow read, create, update, delete: if isAdmin();
+
+      // Price history subcollection: append-only and immutable
+      match /priceHistory/{entryId} {
+        allow read, create: if isAdmin();
+        allow update, delete: if false;
+      }
     }
 
     // Default deny rule: All other collections and documents are protected against unauthorized access

@@ -22,12 +22,16 @@ import MedicineToast from "@/components/medicine/MedicineToast";
 
 import { getMedicines as getFirestoreMedicines } from "@/lib/firestore/medicines";
 import { saveMedicines, getMedicines as getCachedMedicines, clearMedicines } from "@/lib/pwa/db";
+import { subscribeToAuthChanges, isAuthorizedAdmin } from "@/lib/auth";
 import type { DatabaseMedicine, MedicineViewMode } from "@/types";
+import Link from "next/link";
 
 export default function MedicineDatabasePage() {
   // ─── Interactive State ───────────────────────────────────────────────────
   const [medicines, setMedicines] = useState<DatabaseMedicine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isError, setIsError] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
@@ -55,7 +59,7 @@ export default function MedicineDatabasePage() {
   };
 
   // ─── Data Loading: Firestore (Online) + IndexedDB (Offline) ─────────────
-  const loadMedicines = useCallback(async () => {
+  const loadMedicines = useCallback(async (isAuthAdmin?: boolean) => {
     setIsLoading(true);
     setIsError(false);
     setErrorMessage(null);
@@ -63,7 +67,7 @@ export default function MedicineDatabasePage() {
     const online = typeof navigator !== "undefined" ? navigator.onLine : true;
     setIsOffline(!online);
 
-    if (online) {
+    if (online && isAuthAdmin) {
       try {
         const firestoreMeds = await getFirestoreMedicines();
         setMedicines(firestoreMeds);
@@ -97,12 +101,12 @@ export default function MedicineDatabasePage() {
         setIsLoading(false);
       }
     } else {
-      // Browser reports offline
+      // Offline or unauthenticated — try offline cache
       try {
         const cached = await getCachedMedicines();
         if (cached && cached.length > 0) {
           setMedicines(cached);
-          showToast("অফলাইন মোড: ক্যাশড ডেটা ব্যবহৃত হচ্ছে");
+          if (!online) showToast("অফলাইন মোড: ক্যাশড ডেটা ব্যবহৃত হচ্ছে");
         } else {
           setMedicines([]);
         }
@@ -116,15 +120,19 @@ export default function MedicineDatabasePage() {
   }, []);
 
   useEffect(() => {
-    loadMedicines();
+    const unsubscribe = subscribeToAuthChanges((user) => {
+      const authorized = isAuthorizedAdmin(user);
+      setIsAuthenticated(authorized);
+      setIsAuthChecking(false);
+      loadMedicines(authorized);
+    });
 
     const handleOnline = () => {
       setIsOffline(false);
-      loadMedicines();
+      if (isAuthenticated) loadMedicines(true);
     };
     const handleOffline = () => {
       setIsOffline(true);
-      showToast("ইন্টারনেট সংযোগ বিচ্ছিন্ন: অফলাইন মোড সক্রিয়");
     };
 
     if (typeof window !== "undefined") {
@@ -330,7 +338,24 @@ export default function MedicineDatabasePage() {
           />
 
           {/* Interactive Results Area */}
-          {isLoading ? (
+          {!isAuthChecking && !isAuthenticated && medicines.length === 0 ? (
+            <div className="p-8 sm:p-12 text-center rounded-2xl bg-surface-container-lowest border border-[var(--color-border)] shadow-xs flex flex-col items-center justify-center max-w-md mx-auto w-full my-8">
+              <div className="w-14 h-14 rounded-2xl bg-surface-container-high flex items-center justify-center text-primary mb-4">
+                <span className="material-symbols-outlined text-3xl">lock</span>
+              </div>
+              <h2 className="text-xl font-bold text-on-surface">প্রাইভেট মেডিসিন ডেটাবেস</h2>
+              <p className="text-xs sm:text-sm text-on-surface-variant mt-2 leading-relaxed">
+                ওষুধের তালিকা ও রেফারেন্স মূল্য দেখতে অনুগ্রহ করে অনুমোদিত অ্যাডমিন অ্যাকাউন্টে সাইন ইন করুন।
+              </p>
+              <Link
+                href="/admin/login"
+                className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-primary-dark transition-all"
+              >
+                <span className="material-symbols-outlined text-lg">login</span>
+                <span>অ্যাডমিন লগইন</span>
+              </Link>
+            </div>
+          ) : isLoading ? (
             <MedicineLoadingState count={6} />
           ) : isError ? (
             <MedicineEmptyState
