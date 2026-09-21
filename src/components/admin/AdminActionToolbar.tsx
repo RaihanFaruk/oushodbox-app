@@ -24,6 +24,7 @@ interface AdminActionToolbarProps {
   onTriggerPriceUpdate: () => void;
   onResetFilters: () => void;
   onExportData: () => void;
+  onCopyFullList?: () => void;
 }
 
 export default function AdminActionToolbar({
@@ -45,6 +46,7 @@ export default function AdminActionToolbar({
   onTriggerPriceUpdate,
   onResetFilters,
   onExportData,
+  onCopyFullList,
 }: AdminActionToolbarProps) {
   return (
     <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-md border border-[var(--color-border)]">
@@ -60,6 +62,18 @@ export default function AdminActionToolbar({
             <span className="material-symbols-outlined text-xl">add_circle</span>
             <span>➕ নতুন ওষুধ যোগ করুন (Add New Medicine)</span>
           </button>
+
+          {onCopyFullList && (
+            <button
+              onClick={onCopyFullList}
+              className="flex items-center justify-center gap-space-xs px-space-md py-space-sm rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-label-lg text-label-lg shadow-sm active:scale-[0.98] transition-all cursor-pointer font-semibold"
+              type="button"
+              title="সম্পূর্ণ তালিকা কপি করুন (হোয়াটসঅ্যাপে পেস্টের জন্য)"
+            >
+              <span className="material-symbols-outlined text-xl">content_copy</span>
+              <span>📋 সম্পূর্ণ তালিকা কপি করুন</span>
+            </button>
+          )}
 
           <button
             onClick={onTriggerBulkUpload}

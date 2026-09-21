@@ -17,6 +17,7 @@ import {
 import { logout, subscribeToAuthChanges } from "@/lib/auth";
 import { deleteCachedMedicine } from "@/lib/pwa/db";
 import { getFirestoreErrorMessage } from "@/components/ui/Toast";
+import { toBengaliNumeral } from "@/lib/utils";
 import type {
   AdminMedicineItem,
   AdminModuleTabKey,
@@ -371,6 +372,43 @@ export default function AdminPanelClient() {
     showToast("ড্রাগ প্রাইস সিঙ্ক প্রস্তুত...");
   };
 
+  const handleCopyFullList = async () => {
+    if (medicines.length === 0) {
+      showToast("কপি করার জন্য কোনো ওষুধ পাওয়া যায়নি।");
+      return;
+    }
+
+    const now = new Date();
+    const monthNames = [
+      "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+      "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"
+    ];
+    const formattedDate = `${toBengaliNumeral(now.getDate())} ${monthNames[now.getMonth()]}, ${toBengaliNumeral(now.getFullYear())}`;
+
+    const items = medicines.map((m, idx) => {
+      const num = toBengaliNumeral(idx + 1);
+      const strengthStr = m.strength ? ` (${m.strength})` : "";
+      const priceStr = m.mrpFormatted || `৳ ${m.mrp.toFixed(2)}`;
+      return `${num}. *${m.tradeName}*${strengthStr}\n   কোম্পানি: ${m.manufacturer || "—"}\n   মূল্য: ${priceStr}`;
+    }).join("\n\n");
+
+    const header = `*ঔষধBox — ওষুধের সম্পূর্ণ মূল্য তালিকা*\nতারিখ: ${formattedDate}\nমোট ওষুধ: ${toBengaliNumeral(medicines.length)}টি\n-----------------------------`;
+    const footer = `-----------------------------\n_OushodBox Personal Medicine Workspace_`;
+    const fullText = `${header}\n\n${items}\n\n${footer}`;
+
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(fullText);
+        showToast("সম্পূর্ণ তালিকা ক্লিপবোর্ডে কপি করা হয়েছে!");
+      } else {
+        showToast("ক্লিপবোর্ডে কপি করার সুবিধা অনুপলব্ধ।");
+      }
+    } catch (err) {
+      console.warn("Clipboard copy failed:", err);
+      showToast("ক্লিপবোর্ডে কপি করা ব্যর্থ হয়েছে।");
+    }
+  };
+
   return (
     <div className="flex flex-col w-full gap-space-lg max-w-7xl mx-auto">
       {/* Toast Notification */}
@@ -430,6 +468,7 @@ export default function AdminPanelClient() {
             onTriggerPriceUpdate={handleTriggerPriceUpdate}
             onResetFilters={handleResetFilters}
             onExportData={handleExportData}
+            onCopyFullList={handleCopyFullList}
           />
 
           {/* Central Medicine Data Registry Table */}
