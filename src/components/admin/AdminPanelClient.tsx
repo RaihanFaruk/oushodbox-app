@@ -16,6 +16,7 @@ import {
 } from "@/lib/firestore/medicines";
 import { logout, subscribeToAuthChanges } from "@/lib/auth";
 import { deleteCachedMedicine } from "@/lib/pwa/db";
+import { getFirestoreErrorMessage } from "@/components/ui/Toast";
 import type {
   AdminMedicineItem,
   AdminModuleTabKey,
@@ -269,9 +270,9 @@ export default function AdminPanelClient() {
         showToast("ওষুধের তথ্য সফলভাবে আপডেট করা হয়েছে!");
         setIsAddModalOpen(false);
         setEditingMedicine(null);
-      } catch (error) {
+      } catch (error: any) {
         console.error("[AdminPanel] Failed to update medicine in Firestore:", error);
-        showToast("ওষুধ আপডেট করতে ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।");
+        showToast(`আপডেট ব্যর্থ: ${getFirestoreErrorMessage(error)}`);
       } finally {
         setIsSubmitting(false);
       }
@@ -307,9 +308,9 @@ export default function AdminPanelClient() {
         showToast("সফলভাবে ওষুধটি ডাটাবেসে নথিভুক্ত হয়েছে!");
         setIsAddModalOpen(false);
         setEditingMedicine(null);
-      } catch (error) {
+      } catch (error: any) {
         console.error("[AdminPanel] Failed to save medicine to Firestore:", error);
-        showToast("ওষুধ সংরক্ষণ করতে ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।");
+        showToast(`সংরক্ষণ ব্যর্থ: ${getFirestoreErrorMessage(error)}`);
       } finally {
         setIsSubmitting(false);
       }
@@ -339,9 +340,9 @@ export default function AdminPanelClient() {
 
       showToast("রেকর্ডটি স্থায়ীভাবে অপসারণ করা হয়েছে।");
       setDeletingMedicine(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error("[AdminPanel] Failed to delete medicine from Firestore:", error);
-      showToast("রেকর্ড মুছে ফেলতে ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।");
+      showToast(`মুছে ফেলা ব্যর্থ: ${getFirestoreErrorMessage(error)}`);
     } finally {
       setIsSubmitting(false);
     }

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import PwaRegistration from "@/components/pwa/PwaRegistration";
 import OfflineBanner from "@/components/pwa/OfflineBanner";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -66,9 +67,11 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full bg-canvas text-on-surface antialiased font-sans">
-        <PwaRegistration />
-        <OfflineBanner />
-        {children}
+        <ToastProvider>
+          <PwaRegistration />
+          <OfflineBanner />
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );

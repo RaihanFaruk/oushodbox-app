@@ -25,6 +25,7 @@ import { getMedicines as getCachedMedicines, saveMedicines as setCachedMedicines
 import { subscribeToAuthChanges, isAuthorizedAdmin } from "@/lib/auth";
 import { toBengaliNumeral, shareToWhatsApp } from "@/lib/utils";
 import { t } from "@/lib/i18n";
+import { getFirestoreErrorMessage } from "@/components/ui/Toast";
 import type { DatabaseMedicine, AdminMedicineItem } from "@/types";
 
 export default function HomePage() {
@@ -115,7 +116,7 @@ export default function HomePage() {
       showToast(`"${data.tradeName}" সফলভাবে সংরক্ষণ করা হয়েছে`);
       await fetchMedicines();
     } catch (err: any) {
-      showToast(`সংরক্ষণ ব্যর্থ হয়েছে: ${err.message || "ত্রুটি"}`);
+      showToast(`সংরক্ষণ ব্যর্থ হয়েছে: ${getFirestoreErrorMessage(err)}`);
     } finally {
       setIsSubmitting(false);
     }
