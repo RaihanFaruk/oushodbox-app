@@ -29,7 +29,7 @@ export default function AdminAddMedicineModal({
   const [dosageForm, setDosageForm] = useState("ট্যাবলেট");
   const [strength, setStrength] = useState("");
   const [mrp, setMrp] = useState("");
-  const [discountPct, setDiscountPct] = useState("5");
+  const [discountPct, setDiscountPct] = useState("0");
   const [notes, setNotes] = useState("");
   const [isInstantPublish, setIsInstantPublish] = useState(true);
 
@@ -38,11 +38,11 @@ export default function AdminAddMedicineModal({
     if (editingMedicine) {
       setTradeName(editingMedicine.tradeName);
       setGenericName(editingMedicine.genericName);
-      setManufacturer(editingMedicine.manufacturer);
+      setManufacturer(editingMedicine.manufacturer || "");
       setDosageForm(editingMedicine.dosageForm);
       setStrength(editingMedicine.strength);
       setMrp(editingMedicine.mrp.toString());
-      setDiscountPct(editingMedicine.discountPct.toString());
+      setDiscountPct((editingMedicine.discountPct ?? 0).toString());
       setNotes(editingMedicine.notes || "");
       setIsInstantPublish(editingMedicine.status === "live");
     } else {
@@ -52,7 +52,7 @@ export default function AdminAddMedicineModal({
       setDosageForm("ট্যাবলেট");
       setStrength("");
       setMrp("");
-      setDiscountPct("5");
+      setDiscountPct("0");
       setNotes("");
       setIsInstantPublish(true);
     }
@@ -76,9 +76,9 @@ export default function AdminAddMedicineModal({
     }
 
     onSave({
-      tradeName,
-      genericName,
-      manufacturer: manufacturer || "Square Pharma",
+      tradeName: tradeName.trim(),
+      genericName: genericName.trim(),
+      manufacturer: manufacturer.trim() || "অনির্ধারিত",
       dosageForm,
       strength,
       mrp: parsedMrp,

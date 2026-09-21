@@ -5,9 +5,10 @@
  * Preserved faithfully from Stitch medicine_database design.
  */
 
+import Link from "next/link";
+
 interface MedicineEmptyStateProps {
   onResetFilters: () => void;
-  onQuickSearchNapa?: () => void;
   isDatabaseEmpty?: boolean;
   isError?: boolean;
   errorMessage?: string;
@@ -16,7 +17,6 @@ interface MedicineEmptyStateProps {
 
 export default function MedicineEmptyState({
   onResetFilters,
-  onQuickSearchNapa,
   isDatabaseEmpty,
   isError,
   errorMessage,
@@ -24,29 +24,27 @@ export default function MedicineEmptyState({
 }: MedicineEmptyStateProps) {
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center p-space-xl text-center rounded-xl bg-surface-container-lowest shadow-sm">
-        <div className="w-20 h-20 rounded-full bg-error-container/30 flex items-center justify-center text-error mb-space-md">
-          <span className="material-symbols-outlined text-5xl text-error" aria-hidden="true">
+      <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl bg-surface border border-[var(--color-border)] shadow-sm">
+        <div className="w-14 h-14 rounded-2xl bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center text-error mb-4">
+          <span className="material-symbols-outlined text-3xl" aria-hidden="true">
             cloud_off
           </span>
         </div>
-        <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">
+        <h3 className="text-base font-bold text-on-surface">
           তথ্য লোড করতে সমস্যা হয়েছে
         </h3>
-        <p className="font-body-md text-body-md text-on-surface-variant max-w-md mt-1 mb-space-lg">
+        <p className="text-xs sm:text-sm text-on-surface-variant max-w-md mt-1 mb-5">
           {errorMessage || "সার্ভার বা ডেটাবেসের সাথে সংযোগ স্থাপন করা যায়নি। অনুগ্রহ করে ইন্টারনেট সংযোগ পরীক্ষা করুন।"}
         </p>
         {onRetry && (
-          <div className="flex flex-wrap items-center justify-center gap-space-sm">
-            <button
-              type="button"
-              onClick={onRetry}
-              className="inline-flex items-center gap-2 px-space-lg py-2.5 rounded-xl bg-primary text-on-primary font-label-md text-label-md shadow-sm hover:bg-primary-container transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-sm" aria-hidden="true">refresh</span>
-              পুনরায় চেষ্টা করুন
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold shadow-sm hover:bg-primary-dark transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-sm" aria-hidden="true">refresh</span>
+            পুনরায় চেষ্টা করুন
+          </button>
         )}
       </div>
     );
@@ -54,65 +52,49 @@ export default function MedicineEmptyState({
 
   if (isDatabaseEmpty) {
     return (
-      <div className="flex flex-col items-center justify-center p-space-xl text-center rounded-xl bg-surface-container-lowest shadow-sm">
-        <div className="w-20 h-20 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant mb-space-md">
-          <span className="material-symbols-outlined text-5xl text-outline" aria-hidden="true">
+      <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl bg-surface border border-dashed border-[var(--color-border)] shadow-sm">
+        <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-on-surface-variant mb-4">
+          <span className="material-symbols-outlined text-3xl text-outline" aria-hidden="true">
             medication
           </span>
         </div>
-        <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">
+        <h3 className="text-base font-bold text-on-surface">
           ডেটাবেসে কোনো ওষুধ সংরক্ষিত নেই
         </h3>
-        <p className="font-body-md text-body-md text-on-surface-variant max-w-md mt-1 mb-space-lg">
-          বর্তমানে ঔষধBox ডেটাবেসে কোনো ওষুধ যুক্ত করা হয়নি। অ্যাডমিন প্যানেল থেকে ওষুধ যুক্ত করার পর এখানে তালিকা দেখতে পাবেন।
+        <p className="text-xs sm:text-sm text-on-surface-variant max-w-sm mt-1 mb-5">
+          আপনার ব্যক্তিগত মেডিসিন ডেটাবেজ বর্তমানে খালি। অ্যাডমিন প্যানেল থেকে নতুন ওষুধ যোগ করুন।
         </p>
-        {onRetry && (
-          <div className="flex flex-wrap items-center justify-center gap-space-sm">
-            <button
-              type="button"
-              onClick={onRetry}
-              className="inline-flex items-center gap-2 px-space-lg py-2.5 rounded-xl bg-primary text-on-primary font-label-md text-label-md shadow-sm hover:bg-primary-container transition-all cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-sm" aria-hidden="true">refresh</span>
-              রিফ্রেশ করুন
-            </button>
-          </div>
-        )}
+        <Link
+          href="/admin"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold shadow-sm hover:bg-primary-dark transition-all cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-base">add</span>
+          প্রথম ওষুধ যোগ করুন
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center p-space-xl text-center rounded-xl bg-surface-container-lowest shadow-sm">
-      <div className="w-20 h-20 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant mb-space-md">
-        <span className="material-symbols-outlined text-5xl text-outline" aria-hidden="true">
+    <div className="flex flex-col items-center justify-center p-8 sm:p-12 text-center rounded-2xl bg-surface border border-[var(--color-border)] shadow-sm">
+      <div className="w-14 h-14 rounded-2xl bg-surface-container flex items-center justify-center text-on-surface-variant mb-4">
+        <span className="material-symbols-outlined text-3xl text-outline" aria-hidden="true">
           search_off
         </span>
       </div>
-      <h3 className="font-headline-sm text-headline-sm text-on-surface font-bold">
+      <h3 className="text-base font-bold text-on-surface">
         কোনো ওষুধ পাওয়া যায়নি
       </h3>
-      <p className="font-body-md text-body-md text-on-surface-variant max-w-md mt-1 mb-space-lg">
-        আপনার অনুসন্ধানকৃত নামের সাথে মেলেনি। বানান পরীক্ষা করুন অথবা বিকল্প জেনেরিক গ্রুপ বা প্রস্তুতকারকের নাম দিয়ে চেষ্টা করুন।
+      <p className="text-xs sm:text-sm text-on-surface-variant max-w-sm mt-1 mb-5">
+        অনুসন্ধান বা ফিল্টারের সাথে কোনো ওষুধ মেলেনি। ফিল্টার রিসেট করে আবার চেষ্টা করুন।
       </p>
-      <div className="flex flex-wrap items-center justify-center gap-space-sm">
-        <button
-          type="button"
-          onClick={onResetFilters}
-          className="px-space-lg py-2.5 rounded-xl bg-primary text-on-primary font-label-md text-label-md shadow-sm hover:bg-primary-container transition-all cursor-pointer"
-        >
-          সকল ফিল্টার মুছুন
-        </button>
-        {onQuickSearchNapa && (
-          <button
-            type="button"
-            onClick={onQuickSearchNapa}
-            className="px-space-md py-2.5 rounded-xl bg-surface-container text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors cursor-pointer"
-          >
-            &apos;Napa&apos; দিয়ে অনুসন্ধান করুন
-          </button>
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={onResetFilters}
+        className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-semibold shadow-sm hover:bg-primary-dark transition-all cursor-pointer"
+      >
+        সকল ফিল্টার মুছুন
+      </button>
     </div>
   );
 }

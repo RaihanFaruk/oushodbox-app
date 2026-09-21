@@ -10,54 +10,51 @@ import type { MedicineViewMode, MedicineSimState } from "@/types";
 interface MedicineRegistryHeaderProps {
   viewMode: MedicineViewMode;
   onViewModeChange: (mode: MedicineViewMode) => void;
-  simState: MedicineSimState;
-  onToggleSimState: (state: MedicineSimState) => void;
+  totalCount?: number;
 }
 
 export default function MedicineRegistryHeader({
   viewMode,
   onViewModeChange,
-  simState,
-  onToggleSimState,
+  totalCount,
 }: MedicineRegistryHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-space-md p-space-lg rounded-xl bg-surface-container-lowest shadow-sm">
-      <div className="flex items-center gap-space-md">
-        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
-          <span className="material-symbols-outlined text-3xl" aria-hidden="true">
-            local_pharmacy
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-surface border border-[var(--color-border)] shadow-sm">
+      <div className="flex items-center gap-3.5">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+          <span className="material-symbols-outlined text-2xl" aria-hidden="true">
+            medication
           </span>
         </div>
         <div className="flex flex-col">
-          <div className="flex items-center gap-space-xs flex-wrap">
-            <h1 className="font-headline-md text-headline-md text-on-surface font-bold">
-              ওষুধ ডাটাবেস
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-lg font-bold text-on-surface tracking-tight">
+              ওষুধ ডেটাবেজ
             </h1>
-            <span className="px-space-xs py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold">
-              লাইভ ডিজিডিএ সিঙ্ক
-            </span>
+            {typeof totalCount === "number" && (
+              <span className="px-2 py-0.5 rounded-full bg-surface-container-high text-on-surface-variant text-[11px] font-semibold">
+                {totalCount} টি রেকর্ড
+              </span>
+            )}
           </div>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">
-            বাংলাদেশ ন্যাশনাল ফর্মুলারি ও ডিজিডিএ অনুমোদিত জেনেরিক ও ব্র্যান্ড ইনভেন্টরি
+          <p className="text-xs text-on-surface-variant">
+            ব্যক্তিগত মেডিসিন ও রেফারেন্স প্রাইস ওয়ার্কস্পেস
           </p>
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-space-sm">
+      <div className="flex items-center gap-2">
         {/* Table View Toggle */}
         <button
           type="button"
-          onClick={() => {
-            onViewModeChange("table");
-            if (simState !== "normal") onToggleSimState("normal");
-          }}
-          className={`flex items-center gap-space-xs px-space-md py-space-xs rounded-lg font-label-md text-label-md transition-all cursor-pointer ${
-            viewMode === "table" && simState === "normal"
-              ? "bg-primary text-on-primary shadow-sm"
-              : "bg-surface-container-low text-on-surface hover:bg-surface-container"
+          onClick={() => onViewModeChange("table")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            viewMode === "table"
+              ? "bg-primary text-white shadow-sm"
+              : "bg-surface-container text-on-surface hover:bg-surface-container-high"
           }`}
         >
-          <span className="material-symbols-outlined text-lg" aria-hidden="true">
+          <span className="material-symbols-outlined text-base" aria-hidden="true">
             table_rows
           </span>
           <span className="hidden sm:inline">টেবিল ভিউ</span>
@@ -66,56 +63,17 @@ export default function MedicineRegistryHeader({
         {/* Grid View Toggle */}
         <button
           type="button"
-          onClick={() => {
-            onViewModeChange("grid");
-            if (simState !== "normal") onToggleSimState("normal");
-          }}
-          className={`flex items-center gap-space-xs px-space-md py-space-xs rounded-lg font-label-md text-label-md transition-all cursor-pointer ${
-            viewMode === "grid" && simState === "normal"
-              ? "bg-primary text-on-primary shadow-sm"
-              : "bg-surface-container-low text-on-surface hover:bg-surface-container"
+          onClick={() => onViewModeChange("grid")}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            viewMode === "grid"
+              ? "bg-primary text-white shadow-sm"
+              : "bg-surface-container text-on-surface hover:bg-surface-container-high"
           }`}
         >
-          <span className="material-symbols-outlined text-lg" aria-hidden="true">
+          <span className="material-symbols-outlined text-base" aria-hidden="true">
             grid_view
           </span>
           <span className="hidden sm:inline">গ্রিড ভিউ</span>
-        </button>
-
-        {/* Empty State Simulation Button */}
-        <button
-          type="button"
-          onClick={() =>
-            onToggleSimState(simState === "empty" ? "normal" : "empty")
-          }
-          className={`flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg font-label-sm text-label-sm transition-colors cursor-pointer ${
-            simState === "empty"
-              ? "bg-secondary text-white"
-              : "bg-surface-container-low text-secondary hover:bg-surface-container"
-          }`}
-        >
-          <span className="material-symbols-outlined text-base" aria-hidden="true">
-            search_off
-          </span>
-          <span>{simState === "empty" ? "স্বাভাবিক দেখুন" : "খালি ফলাফল"}</span>
-        </button>
-
-        {/* Skeleton Load Simulation Button */}
-        <button
-          type="button"
-          onClick={() =>
-            onToggleSimState(simState === "skeleton" ? "normal" : "skeleton")
-          }
-          className={`flex items-center gap-space-xs px-space-sm py-space-xs rounded-lg font-label-sm text-label-sm transition-colors cursor-pointer ${
-            simState === "skeleton"
-              ? "bg-secondary text-white"
-              : "bg-surface-container-low text-secondary hover:bg-surface-container"
-          }`}
-        >
-          <span className="material-symbols-outlined text-base" aria-hidden="true">
-            hourglass_empty
-          </span>
-          <span>{simState === "skeleton" ? "স্বাভাবিক দেখুন" : "স্কেলিটন লোড"}</span>
         </button>
       </div>
     </div>

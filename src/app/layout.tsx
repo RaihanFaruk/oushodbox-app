@@ -11,9 +11,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ঔষধBox — ফার্মাসিস্ট ম্যানেজমেন্ট প্ল্যাটফর্ম",
+  title: "ঔষধBox — মেডিসিন রেফারেন্স ও প্রাইজ ওয়ার্কস্পেস",
   description:
-    "ঔষধBox is a clinical-grade pharmacy management platform for licensed pharmacists and healthcare practitioners in Bangladesh. Search medicines, manage inventory, and share prescriptions instantly.",
+    "ওষুধের নাম, কোম্পানি, রেফারেন্স মূল্য ও হালনাগাদ তথ্য তাৎক্ষণিক খোঁজা ও মনে রাখার পার্সোনাল ওয়ার্কস্পেস।",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -24,11 +24,11 @@ export const metadata: Metadata = {
     telephone: false,
   },
   keywords: [
-    "pharmacy",
+    "medicine",
     "Bangladesh",
     "medicine database",
     "ঔষধ",
-    "pharmacist",
+    "drug price",
     "drug lookup",
   ],
 };

@@ -45,81 +45,83 @@ export default function MedicineAlternativesCard({
         </p>
 
         {/* List of Alternatives */}
-        <div className="flex flex-col gap-space-xs">
-          {displayList.map((alt, idx) => (
+        {alternatives.length > 0 ? (
+          <div className="flex flex-col gap-space-xs">
+            {displayList.map((alt, idx) => (
+              <div
+                key={idx}
+                className="p-space-sm rounded-xl bg-surface-container-low hover:bg-surface-container-high/60 transition-colors flex items-center justify-between"
+              >
+                <div className="flex flex-col">
+                  <span className="font-label-md text-label-md text-on-surface font-bold">
+                    {alt.name}
+                  </span>
+                  <span className="font-body-sm text-body-sm text-on-surface-variant">
+                    {alt.manufacturer}
+                  </span>
+                </div>
+                <div className="flex items-center gap-space-sm">
+                  <span className="font-label-md text-label-md font-bold text-primary">
+                    {alt.price}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onCompareBrand?.(alt.name)}
+                    className="px-space-xs py-1 rounded bg-surface-container-lowest text-secondary font-label-sm text-label-sm hover:bg-secondary hover:text-on-secondary transition-colors cursor-pointer"
+                  >
+                    রেফারেন্স
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="font-body-sm text-body-sm text-on-surface-variant p-space-sm rounded-xl bg-surface-container-low">
+            বিকল্প ব্র্যান্ডের তথ্য বর্তমানে ডেটাবেসে সংরক্ষিত নেই।
+          </p>
+        )}
+
+        {alternatives.length > 4 && (
+          <button
+            type="button"
+            onClick={() => setExpanded((prev) => !prev)}
+            className="mt-space-sm w-full py-2 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors flex items-center justify-center gap-1 cursor-pointer"
+          >
+            <span>
+              {expanded
+                ? "সংক্ষিপ্ত রূপ দেখুন"
+                : `সকল বিকল্প ব্র্যান্ড দেখুন (${alternatives.length}টি)`}
+            </span>
+            <span className="material-symbols-outlined text-base" aria-hidden="true">
+              {expanded ? "expand_less" : "expand_more"}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Quick Safety Indicator Graphic Card - Only rendered when verified clinical rating exists */}
+      {safetyRating && safetyRating.score > 0 && (
+        <div className="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex flex-col gap-space-xs">
+          <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">
+            রিস্ক অ্যাসেসমেন্ট
+          </span>
+          <div className="flex items-center justify-between mt-1">
+            <span className="font-label-md text-label-md text-on-surface font-semibold">
+              {safetyRating.label}
+            </span>
+            <span className="font-label-sm text-label-sm text-tertiary font-bold">
+              {safetyRating.scoreLabel}
+            </span>
+          </div>
+
+          <div className="w-full h-2 rounded-full bg-surface-container-high overflow-hidden mt-1">
             <div
-              key={idx}
-              className="p-space-sm rounded-xl bg-surface-container-low hover:bg-surface-container-high/60 transition-colors flex items-center justify-between"
-            >
-              <div className="flex flex-col">
-                <span className="font-label-md text-label-md text-on-surface font-bold">
-                  {alt.name}
-                </span>
-                <span className="font-body-sm text-body-sm text-on-surface-variant">
-                  {alt.manufacturer}
-                </span>
-              </div>
-              <div className="flex items-center gap-space-sm">
-                <span className="font-label-md text-label-md font-bold text-primary">
-                  {alt.price}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onCompareBrand?.(alt.name)}
-                  className="px-space-xs py-1 rounded bg-surface-container-lowest text-secondary font-label-sm text-label-sm hover:bg-secondary hover:text-on-secondary transition-colors cursor-pointer"
-                >
-                  তুলনা
-                </button>
-              </div>
-            </div>
-          ))}
+              className="h-full bg-tertiary rounded-full transition-all duration-500"
+              style={{ width: `${safetyRating.score}%` }}
+            />
+          </div>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setExpanded((prev) => !prev)}
-          className="mt-space-sm w-full py-2 rounded-xl bg-surface-container-low text-on-surface font-label-md text-label-md hover:bg-surface-container-high transition-colors flex items-center justify-center gap-1 cursor-pointer"
-        >
-          <span>
-            {expanded
-              ? "সংক্ষিপ্ত রূপ দেখুন"
-              : `সকল বিকল্প ব্র্যান্ড দেখুন (${alternatives.length}টি)`}
-          </span>
-          <span className="material-symbols-outlined text-base" aria-hidden="true">
-            {expanded ? "expand_less" : "expand_more"}
-          </span>
-        </button>
-      </div>
-
-      {/* Quick Safety Indicator Graphic Card */}
-      <div className="bg-surface-container-lowest rounded-2xl p-space-md shadow-sm flex flex-col gap-space-xs">
-        <span className="font-label-sm text-label-sm text-outline uppercase tracking-wider">
-          রিস্ক অ্যাসেসমেন্ট চার্ট
-        </span>
-        <div className="flex items-center justify-between mt-1">
-          <span className="font-label-md text-label-md text-on-surface font-semibold">
-            {safetyRating.label}
-          </span>
-          <span className="font-label-sm text-label-sm text-tertiary font-bold">
-            {safetyRating.scoreLabel}
-          </span>
-        </div>
-
-        {/* Micro Visual Bar */}
-        <div className="w-full h-2 rounded-full bg-surface-container-high overflow-hidden mt-1">
-          <div
-            className="h-full bg-tertiary rounded-full transition-all duration-500"
-            style={{ width: `${safetyRating.score}%` }}
-          ></div>
-        </div>
-        <div className="flex items-center justify-between text-[11px] text-outline mt-0.5">
-          <span>ঝুঁকিপূর্ণ</span>
-          <span>মাঝারি</span>
-          <span className="font-semibold text-tertiary">
-            নিরাপদ ({safetyRating.score}%)
-          </span>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -8,9 +8,6 @@
 import { useState, useMemo, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  DEMO_ADMIN_AUDIT_LOGS,
-} from "@/lib/mock-data";
-import {
   getMedicines,
   addMedicine,
   updateMedicine,
@@ -21,7 +18,6 @@ import { logout, subscribeToAuthChanges } from "@/lib/auth";
 import { deleteCachedMedicine } from "@/lib/pwa/db";
 import type {
   AdminMedicineItem,
-  AdminAuditLogItem,
   AdminModuleTabKey,
 } from "@/types";
 
@@ -29,7 +25,6 @@ import AdminHeroBanner from "./AdminHeroBanner";
 import AdminModuleTabs from "./AdminModuleTabs";
 import AdminActionToolbar from "./AdminActionToolbar";
 import AdminMedicineTable from "./AdminMedicineTable";
-import AdminMonitoringGrid from "./AdminMonitoringGrid";
 import AdminAddMedicineModal from "./AdminAddMedicineModal";
 import AdminDeleteConfirmModal from "./AdminDeleteConfirmModal";
 
@@ -39,7 +34,6 @@ export default function AdminPanelClient() {
 
   // Core Data States — Initialized Empty, Populated Exclusively from Firestore
   const [medicines, setMedicines] = useState<AdminMedicineItem[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AdminAuditLogItem[]>(DEMO_ADMIN_AUDIT_LOGS);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -210,17 +204,6 @@ export default function AdminPanelClient() {
     startTransition(() => {
       setMedicines((prev) => prev.filter((m) => !selectedIds.has(m.id)));
       setSelectedIds(new Set());
-
-      // Add to audit log (client-side)
-      const newAudit: AdminAuditLogItem = {
-        id: `aud-${Date.now()}`,
-        title: `বাল্ক ডিলিট: ${count}টি ওষুধ ডাটাবেস থেকে সরানো হয়েছে`,
-        timeAgo: "এখনই",
-        meta: "অ্যাডমিন ইউজার: Faruk A. • ক্লায়েন্ট-সাইড সেশন লগ",
-        icon: "delete",
-        type: "delete",
-      };
-      setAuditLogs((prev) => [newAudit, ...prev]);
       showToast(`${count}টি ওষুধ সফলভাবে মুছে ফেলা হয়েছে!`);
     });
   };
@@ -233,17 +216,6 @@ export default function AdminPanelClient() {
         prev.map((m) => (selectedIds.has(m.id) ? { ...m, status: "live" } : m))
       );
       setSelectedIds(new Set());
-
-      // Add to audit log (client-side)
-      const newAudit: AdminAuditLogItem = {
-        id: `aud-${Date.now()}`,
-        title: `বাল্ক অনুমোদন: ${count}টি ওষুধ লাইভ প্রকাশ করা হয়েছে`,
-        timeAgo: "এখনই",
-        meta: "অ্যাডমিন ইউজার: Faruk A. • ক্লায়েন্ট-সাইড সেশন লগ",
-        icon: "verified_user",
-        type: "update",
-      };
-      setAuditLogs((prev) => [newAudit, ...prev]);
       showToast(`${count}টি ওষুধ সফলভাবে লাইভ অনুমোদন দেয়া হয়েছে!`);
     });
   };
@@ -294,16 +266,6 @@ export default function AdminPanelClient() {
               : m
           )
         );
-
-        const newAudit: AdminAuditLogItem = {
-          id: `aud-${Date.now()}`,
-          title: `ফারুক আহমেদ (A-Grade) ${data.tradeName || editingMedicine.tradeName} আপডেট করেছেন`,
-          timeAgo: "এখনই",
-          meta: "ম্যানুয়াল ড্রাগ এডিট • ক্লায়েন্ট-সাইড সেশন লগ",
-          icon: "edit",
-          type: "update",
-        };
-        setAuditLogs((prev) => [newAudit, ...prev]);
         showToast("ওষুধের তথ্য সফলভাবে আপডেট করা হয়েছে!");
         setIsAddModalOpen(false);
         setEditingMedicine(null);
@@ -320,15 +282,15 @@ export default function AdminPanelClient() {
         strength: data.strength || "500mg",
         dosageForm: data.dosageForm || "Tablet",
         genericName: data.genericName || "Generic",
-        manufacturer: data.manufacturer || "Square Pharma",
+        manufacturer: data.manufacturer || "অনির্ধারিত",
         mrp: data.mrp || 10,
-        mrpFormatted: data.mrpFormatted || "৳ ১০.০০",
-        discountPct: data.discountPct || 5,
+        mrpFormatted: data.mrpFormatted || `৳ ${(data.mrp || 10).toFixed(2)}`,
+        discountPct: data.discountPct || 0,
         status: data.status || "live",
         iconType: data.iconType || "pill",
         notes: data.notes || "",
         unitPrice: data.mrp || 10,
-        unitPriceFormatted: data.mrpFormatted || "৳ ১০.০০",
+        unitPriceFormatted: data.mrpFormatted || `৳ ${(data.mrp || 10).toFixed(2)}`,
         dosageBadge: data.dosageForm || "ট্যাবলেট",
         unitPriceUnit: "/পিস",
         isRx: data.status === "pending",
@@ -342,16 +304,6 @@ export default function AdminPanelClient() {
         const newItem = toAdminMedicineItem(created);
 
         setMedicines((prev) => [newItem, ...prev]);
-
-        const newAudit: AdminAuditLogItem = {
-          id: `aud-${Date.now()}`,
-          title: `নতুন ওষুধ ${newItem.tradeName} ডাটাবেসে যোগ করা হয়েছে`,
-          timeAgo: "এখনই",
-          meta: "লাইভ রেজিস্ট্রি এন্ট্রি • ক্লায়েন্ট-সাইড সেশন লগ",
-          icon: "add_circle",
-          type: "create",
-        };
-        setAuditLogs((prev) => [newAudit, ...prev]);
         showToast("সফলভাবে ওষুধটি ডাটাবেসে নথিভুক্ত হয়েছে!");
         setIsAddModalOpen(false);
         setEditingMedicine(null);
@@ -385,15 +337,6 @@ export default function AdminPanelClient() {
         return next;
       });
 
-      const newAudit: AdminAuditLogItem = {
-        id: `aud-${Date.now()}`,
-        title: `${target.tradeName} রেকর্ড ডাটাবেস থেকে মুছে ফেলা হয়েছে`,
-        timeAgo: "এখনই",
-        meta: `DEL_REF_${target.id} • ক্লায়েন্ট-সাইড সেশন লগ`,
-        icon: "delete_forever",
-        type: "delete",
-      };
-      setAuditLogs((prev) => [newAudit, ...prev]);
       showToast("রেকর্ডটি স্থায়ীভাবে অপসারণ করা হয়েছে।");
       setDeletingMedicine(null);
     } catch (error) {
@@ -424,11 +367,7 @@ export default function AdminPanelClient() {
   };
 
   const handleTriggerPriceUpdate = () => {
-    showToast("DGDA বাল্ক ড্রাগ প্রাইস সিঙ্ক শুরু হয়েছে...");
-  };
-
-  const handleRefreshToken = () => {
-    showToast("হোয়াটসঅ্যাপ গেটওয়ে টোকেন সফলভাবে রিফ্রেশ করা হয়েছে (মেয়াদ: ২৪ ঘণ্টা)!");
+    showToast("ড্রাগ প্রাইস সিঙ্ক প্রস্তুত...");
   };
 
   return (
@@ -448,9 +387,6 @@ export default function AdminPanelClient() {
       {/* 1. Admin Hero Banner */}
       <AdminHeroBanner
         totalDrugs={medicines.length}
-        pendingCount={pendingCount}
-        registeredUsers={128}
-        systemHealth={100}
         onLogout={handleLogout}
         userEmail={userEmail || undefined}
       />
@@ -506,12 +442,6 @@ export default function AdminPanelClient() {
             currentPage={currentPage}
             totalCount={medicines.length}
             onPageChange={setCurrentPage}
-          />
-
-          {/* Monitoring & Analytics 3-Col Grid */}
-          <AdminMonitoringGrid
-            auditLogs={auditLogs}
-            onRefreshToken={handleRefreshToken}
           />
         </>
       ) : (

@@ -46,12 +46,14 @@ export default function MedicineHeroCard({
                 <span>ওটিসি (OTC Safe)</span>
               </span>
             )}
-            <span className="px-space-xs py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold flex items-center gap-1">
-              <span className="material-symbols-outlined text-xs" aria-hidden="true">
-                verified
+            {monograph.darNumber && monograph.darNumber !== "তথ্য অপ্রাপ্য" && (
+              <span className="px-space-xs py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-semibold flex items-center gap-1">
+                <span className="material-symbols-outlined text-xs" aria-hidden="true">
+                  verified
+                </span>
+                <span>DAR: {monograph.darNumber}</span>
               </span>
-              <span>ডিজিডিএ এনলিস্টেড • DAR: {monograph.darNumber}</span>
-            </span>
+            )}
           </div>
 
           {/* Drug Name & Generic Formulation */}

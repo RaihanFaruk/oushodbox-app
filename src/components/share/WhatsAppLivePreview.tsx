@@ -119,14 +119,16 @@ export default function WhatsAppLivePreview({
             {includePharmacyHeader && (
               <div className="text-[12px] text-[#8696a0] leading-snug">
                 <p>
-                  <strong className="text-[#e9edef]">ফার্মেসি:</strong> সেন্ট্রাল ড্রাগ হাউজ, ধানমন্ডি
+                  <strong className="text-[#e9edef]">প্ল্যাটফর্ম:</strong> ঔষধBox (ব্যক্তিগত রেফারেন্স)
                 </p>
                 <p>
                   <strong className="text-[#e9edef]">তারিখ:</strong> আজ | ঔষধBox রেজিস্ট্রি
                 </p>
-                <p>
-                  <strong className="text-[#e9edef]">রোগী:</strong> {displayName}
-                </p>
+                {patientName.trim() && (
+                  <p>
+                    <strong className="text-[#e9edef]">গ্রহীতা:</strong> {displayName}
+                  </p>
+                )}
               </div>
             )}
 
@@ -201,7 +203,7 @@ export default function WhatsAppLivePreview({
                     <span className="material-symbols-outlined text-[11px] text-tertiary-fixed" aria-hidden="true">
                       shield
                     </span>
-                    <span>ঔষধBox ক্লিনিক্যাল প্ল্যাটফর্ম দ্বারা তৈরিকৃত</span>
+                    <span>ঔষধBox মেডিসিন ওয়ার্কস্পেস দ্বারা প্রেরিত</span>
                   </>
                 )}
               </span>

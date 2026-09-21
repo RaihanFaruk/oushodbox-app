@@ -62,11 +62,11 @@ export default function MedicineDetailsClient({
   };
 
   const handleCompareBrand = (brandName: string) => {
-    showToast(`${brandName} এর সাথে ক্লিনিক্যাল তুলনা প্রস্তুত (ডেমো)`);
+    showToast(`${brandName} এর রেফারেন্স তথ্য প্রস্তুত`);
   };
 
   const handleEditClick = () => {
-    showToast("ক্লিনিক্যাল ডাটা সম্পাদনা মোড সক্রিয় (ডেমো)");
+    showToast("ওষুধ সম্পাদনা করতে অ্যাডমিন কনসোলে যান");
   };
 
   return (
@@ -124,11 +124,10 @@ export default function MedicineDetailsClient({
         <footer className="hidden lg:block w-full bg-surface-container-lowest py-space-md px-margin border-t border-[var(--color-border)] mt-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-space-sm font-label-sm text-label-sm text-on-surface-variant max-w-7xl mx-auto">
             <p>
-              ঔষধBox v1.2.0 • বাংলাদেশ ফার্মাসিউটিক্যাল ডিরেক্টরি • তথ্যের উৎস: DGDA নির্দেশিকা (ডেমো) • শুধুমাত্র তথ্যগত সহায়তায়
+              ঔষধBox — ব্যক্তিগত মেডিসিন রেফারেন্স ও মূল্য তালিকা
             </p>
             <div className="flex items-center gap-space-md">
-              <span className="text-primary font-medium">হটলাইন: ১৬২৬৩</span>
-              <span className="text-secondary font-medium">Rx সেফটি ভেরিফাইড</span>
+              <span className="text-on-surface-variant font-medium">তথ্য সহায়তায়</span>
             </div>
           </div>
         </footer>

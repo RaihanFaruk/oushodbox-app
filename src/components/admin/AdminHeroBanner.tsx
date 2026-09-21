@@ -9,9 +9,7 @@ import { toBengaliNumeral } from "@/lib/utils";
 
 interface AdminHeroBannerProps {
   totalDrugs: number;
-  pendingCount: number;
-  registeredUsers?: number;
-  systemHealth?: number;
+  pendingCount?: number;
   onLogout?: () => void;
   userEmail?: string;
 }
@@ -19,106 +17,40 @@ interface AdminHeroBannerProps {
 export default function AdminHeroBanner({
   totalDrugs,
   pendingCount,
-  registeredUsers = 128,
-  systemHealth = 100,
   onLogout,
-  userEmail,
+  userEmail = "mehj49966@gmail.com",
 }: AdminHeroBannerProps) {
   return (
-    <div className="relative overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm p-space-lg border border-[var(--color-border)]">
-      {/* Ambient background glow */}
-      <div className="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-space-md relative z-10">
-        {/* Left: Badges, Title & Subtitle */}
-        <div className="flex flex-col gap-space-xs">
-          <div className="flex items-center gap-space-xs flex-wrap">
-            <span className="px-space-xs py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed font-label-sm text-label-sm font-bold tracking-wide uppercase">
-              সুপার অ্যাডমিন (Super Admin)
+    <div className="rounded-2xl bg-surface p-5 sm:p-6 border border-[var(--color-border)] shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Left: Identity & Title */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[11px] font-bold tracking-wide uppercase">
+              অ্যাডমিনিস্ট্রেটর
             </span>
-            <span className="px-space-xs py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm font-medium">
-              DGDA সিঙ্ক একটিভ
+            <span className="text-xs text-on-surface-variant">
+              {userEmail}
             </span>
-            <span className="flex items-center gap-1 font-label-sm text-label-sm text-tertiary font-semibold">
-              <span className="w-2 h-2 rounded-full bg-tertiary animate-pulse" />
-              সিস্টেম সংস্করণ v1.2.0-PRO
-            </span>
-            <span className="px-space-xs py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
-              ডেমো কন্ট্রোল সেন্টার
-            </span>
-            {onLogout && (
-              <button
-                onClick={onLogout}
-                type="button"
-                className="px-2.5 py-0.5 rounded-full bg-error/10 text-error hover:bg-error hover:text-on-error font-label-sm text-label-sm font-semibold transition-all flex items-center gap-1 cursor-pointer border border-error/20"
-                title={userEmail ? `লগড-ইন: ${userEmail}` : "লগআউট করুন"}
-              >
-                <span className="material-symbols-outlined text-sm">logout</span>
-                <span>লগআউট</span>
-              </button>
-            )}
           </div>
 
-          <h1 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight mt-1">
-            🛠️ ঔষধBox সিস্টেম অ্যাডমিন প্যানেল
+          <h1 className="text-xl sm:text-2xl font-bold text-on-surface tracking-tight mt-0.5">
+            মেডিসিন ম্যানেজমেন্ট ওয়ার্কস্পেস
           </h1>
 
-          <p className="font-body-md text-body-md text-on-surface-variant max-w-2xl">
-            কেন্দ্রীয় ড্রাগ রেজিস্ট্রি, মাস্টার প্রাইসিং ইনডেক্স, অনুমোদনের সারি ও রিয়েলটাইম ফার্মাসিউটিক্যাল অডিট কন্ট্রোল সেন্টার।
+          <p className="text-xs sm:text-sm text-on-surface-variant max-w-xl">
+            ওষুধের নাম, জেনেরিক, কোম্পানি ও রেফারেন্স মূল্য তালিকা ব্যবস্থাপনা।
           </p>
         </div>
 
-        {/* Right: 4-Metric Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-space-sm">
-          {/* Total Medicines */}
-          <div className="p-space-sm rounded-xl bg-surface-container-low shadow-sm flex flex-col min-w-[120px]">
-            <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">
+        {/* Right: Metrics + Logout */}
+        <div className="flex items-center gap-3 self-start sm:self-auto">
+          <div className="px-4 py-2.5 rounded-xl bg-surface-container-low border border-[var(--color-border)] flex flex-col items-center">
+            <span className="text-[11px] text-on-surface-variant font-medium">
               মোট ওষুধ
             </span>
-            <span className="font-headline-md text-headline-md text-primary font-bold tracking-tight">
+            <span className="text-lg font-bold text-primary leading-tight">
               {toBengaliNumeral(totalDrugs)}
-            </span>
-            <span className="font-label-sm text-label-sm text-tertiary mt-0.5">
-              ↑ ১২টি নতুন যুক্ত
-            </span>
-          </div>
-
-          {/* Pending Verification */}
-          <div className="p-space-sm rounded-xl bg-surface-container-low shadow-sm flex flex-col min-w-[120px]">
-            <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">
-              পেন্ডিং ভেরিফিকেশন
-            </span>
-            <span className="font-headline-md text-headline-md text-error font-bold tracking-tight">
-              {toBengaliNumeral(pendingCount)}
-            </span>
-            <span className="font-label-sm text-label-sm text-on-surface-variant mt-0.5">
-              {pendingCount > 0 ? "অ্যাকশন প্রয়োজন" : "সব অনুমোদিত"}
-            </span>
-          </div>
-
-          {/* Registered Users */}
-          <div className="p-space-sm rounded-xl bg-surface-container-low shadow-sm flex flex-col min-w-[120px]">
-            <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">
-              নিবন্ধিত ব্যবহারকারী
-            </span>
-            <span className="font-headline-md text-headline-md text-secondary font-bold tracking-tight">
-              {toBengaliNumeral(registeredUsers)}
-            </span>
-            <span className="font-label-sm text-label-sm text-secondary font-medium mt-0.5">
-              ফার্মাসিস্ট ও স্টাফ
-            </span>
-          </div>
-
-          {/* System Health */}
-          <div className="p-space-sm rounded-xl bg-surface-container-low shadow-sm flex flex-col min-w-[120px]">
-            <span className="font-label-sm text-label-sm text-on-surface-variant font-medium">
-              সিস্টেম হেলথ
-            </span>
-            <span className="font-headline-md text-headline-md text-tertiary font-bold tracking-tight">
-              {toBengaliNumeral(systemHealth)}%
-            </span>
-            <span className="font-label-sm text-label-sm text-tertiary mt-0.5">
-              জিরো লেটেন্সি
             </span>
           </div>
         </div>

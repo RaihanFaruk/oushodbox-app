@@ -47,13 +47,13 @@ export default function WhatsAppShareHeader({
           </div>
           <div className="flex flex-col">
             <span className="font-label-sm text-label-sm text-on-surface-variant">
-              নিবন্ধিত ডিসপেনসারি
+              মেডিসিন ওয়ার্কস্পেস
             </span>
             <span className="font-label-lg text-label-lg text-on-surface font-bold">
-              সেন্ট্রাল ড্রাগ হাউজ
+              ঔষধBox ডিরেক্টরি
             </span>
             <span className="font-body-sm text-body-sm text-secondary">
-              ধানমন্ডি শাখা • লাইভ কানেক্টেড
+              ব্যক্তিগত রেফারেন্স ও দ্রুত শেয়ার
             </span>
           </div>
         </div>

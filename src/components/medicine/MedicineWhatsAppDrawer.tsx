@@ -20,7 +20,8 @@ export default function MedicineWhatsAppDrawer({
 }: MedicineWhatsAppDrawerProps) {
   if (!isOpen) return null;
 
-  const summaryText = `ঔষধBox প্রেসক্রিপশন সামারি (ডেমো): ${monograph.tradeName} (${monograph.genericName})। মাত্রা: চিকিৎসকের পরামর্শে নির্দেশিত অনুযায়ী। মূল্য: ${monograph.unitPriceFormatted}${monograph.unitPriceUnit}। ${monograph.manufacturer}`;
+  const strengthStr = (monograph as any).strength || monograph.dosageBadge || "";
+  const summaryText = `*${monograph.tradeName} ${strengthStr}*\nজেনেরিক: ${monograph.genericName || "—"}\nকোম্পানি: ${monograph.manufacturer || "—"}\nমূল্য: ${monograph.unitPriceFormatted || `৳ ${monograph.unitPrice}`}\nহালনাগাদ: ${monograph.lastUpdated || "সম্প্রতি"}\n_OushodBox Medicine Workspace_`;
 
   const waUrl = `https://wa.me/?text=${encodeURIComponent(summaryText)}`;
 

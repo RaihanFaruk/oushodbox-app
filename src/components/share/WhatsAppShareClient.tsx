@@ -17,7 +17,6 @@ import WhatsAppMessageForm from "./WhatsAppMessageForm";
 import WhatsAppLivePreview from "./WhatsAppLivePreview";
 import WhatsAppAuditTable from "./WhatsAppAuditTable";
 
-import { DEMO_SHARE_ITEMS, DEMO_AUDIT_LOGS } from "@/lib/mock-data";
 import { toBengaliNumeral } from "@/lib/utils";
 import type {
   PrescriptionShareItem,
@@ -27,17 +26,15 @@ import type {
 } from "@/types";
 
 export default function WhatsAppShareClient() {
-  const [items, setItems] = useState<PrescriptionShareItem[]>(DEMO_SHARE_ITEMS);
-  const [patientName, setPatientName] = useState("জনাব আব্দুল করিম");
-  const [phone, setPhone] = useState("+880 1819-203948");
+  const [items, setItems] = useState<PrescriptionShareItem[]>([]);
+  const [patientName, setPatientName] = useState("");
+  const [phone, setPhone] = useState("");
   const [template, setTemplate] = useState<MessageTemplateKey>("standard");
-  const [advice, setAdvice] = useState(
-    "খাবার ৩০ মিনিট আগে সেক্লো খাবেন, নাপা ভরা পেটে জ্বর বেশি থাকলে খাবেন। পর্যাপ্ত পানি পান করুন।"
-  );
+  const [advice, setAdvice] = useState("");
   const [includePharmacyHeader, setIncludePharmacyHeader] = useState(true);
   const [includeWatermark, setIncludeWatermark] = useState(true);
   const [scopeTab, setScopeTab] = useState<ShareScopeTab>("selected");
-  const [logs, setLogs] = useState<PrescriptionShareLog[]>(DEMO_AUDIT_LOGS);
+  const [logs, setLogs] = useState<PrescriptionShareLog[]>([]);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -88,24 +85,26 @@ export default function WhatsAppShareClient() {
   const generateMessageText = () => {
     const lines: string[] = [];
 
-    lines.push("🌿 *ঔষধBox ডিজিটাল প্রেসক্রিপশন স্লিপ* 🌿");
+    lines.push("🌿 *ঔষধBox মেডিসিন রেফারেন্স স্লিপ* 🌿");
     if (includePharmacyHeader) {
-      lines.push("ফার্মেসি: সেন্ট্রাল ড্রাগ হাউজ, ধানমন্ডি");
-      lines.push("তারিখ: আজ | লাইভ রেজিস্ট্রি");
-      lines.push(`রোগী: ${patientName.trim() || "রোগীর নাম"}`);
+      lines.push("প্ল্যাটফর্ম: ঔষধBox (ব্যক্তিগত রেফারেন্স)");
+      lines.push("তারিখ: আজ | রেজিস্ট্রি তালিকা");
+      if (patientName.trim()) {
+        lines.push(`রোগী / গ্রহীতা: ${patientName.trim()}`);
+      }
     }
     lines.push("━━━━━━━━━━━━━━━━━━━━");
-    lines.push("📋 *আপনার প্রয়োজনীয় ওষুধের তালিকা ও সেবনবিধি:*");
+    lines.push("📋 *ওষুধের তালিকা ও বিবরণ:*");
 
     items.forEach((item, index) => {
       lines.push(
-        `${toBengaliNumeral(index + 1)}. *${item.nameBn} (${item.name})*`
+        `${toBengaliNumeral(index + 1)}. *${item.nameBn || item.name} (${item.name})*`
       );
       lines.push(`   জেনেরিক: ${item.generic} (${item.company})`);
       if (template !== "list_only") {
         lines.push(`   মূল্য: ${item.priceFormatted}`);
       }
-      if (template !== "compact") {
+      if (template !== "compact" && item.dosageAdvice) {
         lines.push(`   সেবনবিধি: ${item.dosageAdvice}`);
       }
     });
@@ -120,11 +119,11 @@ export default function WhatsAppShareClient() {
     }
 
     if (advice.trim()) {
-      lines.push(`💡 *ফার্মাসিস্ট পরামর্শ:* ${advice.trim()}`);
+      lines.push(`💡 *পরামর্শ / নোট:* ${advice.trim()}`);
     }
 
     if (includeWatermark) {
-      lines.push("🛡️ _ঔষধBox ক্লিনিক্যাল প্ল্যাটফর্ম দ্বারা তৈরিকৃত (ডেমো)_");
+      lines.push("🛡️ _ঔষধBox মেডিসিন ওয়ার্কস্পেস দ্বারা প্রেরিত_");
     }
 
     return lines.join("\n");

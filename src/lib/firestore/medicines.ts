@@ -69,14 +69,14 @@ export function toAdminMedicineItem(doc: any): AdminMedicineItem {
     strength: doc.strength || "500mg",
     dosageForm: doc.dosageForm || "Tablet",
     genericName: doc.genericName || "Generic",
-    manufacturer: doc.manufacturer || "Square Pharma",
+    manufacturer: doc.manufacturer || "অনির্ধারিত",
     mrp: mrpVal,
     mrpFormatted: doc.mrpFormatted || `৳ ${mrpVal.toFixed(2)}`,
-    discountPct: Number(doc.discountPct ?? 5),
+    discountPct: Number(doc.discountPct ?? 0),
     status: (doc.status === "live" || doc.status === "pending" || doc.status === "draft") ? doc.status : "live",
     iconType: (doc.iconType === "pill" || doc.iconType === "liquid" || doc.iconType === "injection") ? doc.iconType : "pill",
     notes: doc.notes || "",
-    updatedAt: doc.updatedAt || doc.lastUpdated || "এখনই",
+    updatedAt: doc.updatedAt || doc.lastUpdated || "সম্প্রতি",
   };
 }
 

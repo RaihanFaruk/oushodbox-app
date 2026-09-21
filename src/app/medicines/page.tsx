@@ -22,7 +22,7 @@ import MedicineToast from "@/components/medicine/MedicineToast";
 
 import { getMedicines as getFirestoreMedicines } from "@/lib/firestore/medicines";
 import { saveMedicines, getMedicines as getCachedMedicines, clearMedicines } from "@/lib/pwa/db";
-import type { DatabaseMedicine, MedicineViewMode, MedicineSimState } from "@/types";
+import type { DatabaseMedicine, MedicineViewMode } from "@/types";
 
 export default function MedicineDatabasePage() {
   // ─── Interactive State ───────────────────────────────────────────────────
@@ -39,7 +39,6 @@ export default function MedicineDatabasePage() {
   const [sortBy, setSortBy] = useState("updated");
 
   const [viewMode, setViewMode] = useState<MedicineViewMode>("grid");
-  const [simState, setSimState] = useState<MedicineSimState>("normal");
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
@@ -244,9 +243,9 @@ export default function MedicineDatabasePage() {
     });
   };
 
-  // ─── WhatsApp Sharing (Demo / Local Utility) ─────────────────────────────
+  // ─── WhatsApp Sharing ───────────────────────────────────────────────────
   const shareWhatsAppDirect = (med: DatabaseMedicine) => {
-    const text = `*ঔষধBox তথ্য (ডেমো)*\nওষুধ: ${med.tradeName}\nজেনেরিক: ${med.genericName}\nপ্রস্তুতকারক: ${med.manufacturer}\nমূল্য: ${med.unitPriceFormatted} ${med.unitPriceUnit}\nপ্যাক: ${med.packSize}\n(DGDA লাইসেন্সকৃত ফার্মেসি ডিরেক্টরি)`;
+    const text = `*${med.tradeName}*\nজেনেরিক: ${med.genericName}\nকোম্পানি: ${med.manufacturer}\nমূল্য: ${med.unitPriceFormatted} ${med.unitPriceUnit}\nপ্যাক: ${med.packSize || "স্ট্যান্ডার্ড"}\n_OushodBox Medicine Workspace_`;
     navigator.clipboard?.writeText(text);
     showToast(`${med.tradeName} এর বিবরণ হোয়াটসঅ্যাপে পাঠানোর জন্য কপি করা হয়েছে`);
   };
@@ -260,13 +259,12 @@ export default function MedicineDatabasePage() {
     const selectedMeds = medicines.filter((m) =>
       selectedIds.has(m.id)
     );
-    const names = selectedMeds.map((m) => m.tradeName).join(", ");
-    const text = `*ঔষধBox ব্যাচ তথ্য (ডেমো)*\nনির্বাচিত ওষুধসমূহ (${selectedIds.size}টি):\n${selectedMeds
+    const text = `*ঔষধBox ওষুধ তালিকা (${selectedIds.size}টি)*\n${selectedMeds
       .map(
         (m, i) =>
           `${i + 1}. ${m.tradeName} (${m.genericName}) — ${m.unitPriceFormatted}`
       )
-      .join("\n")}\n\n(DGDA লাইসেন্সকৃত ফার্মেসি ডিরেক্টরি)`;
+      .join("\n")}\n\n_OushodBox Medicine Workspace_`;
 
     navigator.clipboard?.writeText(text);
     showToast(`${selectedIds.size}টি ওষুধের তথ্য হোয়াটসঅ্যাপে শেয়ারের জন্য প্রস্তুত!`);
@@ -279,17 +277,7 @@ export default function MedicineDatabasePage() {
     setDosageFormFilter("all");
     setManufacturerFilter("all");
     setSortBy("updated");
-    setSimState("normal");
     showToast("ফিল্টার রিসেট করা হয়েছে");
-  };
-
-  const setQuickSearchNapa = () => {
-    setSearchQuery("Napa");
-    setGenericFilter("all");
-    setDosageFormFilter("all");
-    setManufacturerFilter("all");
-    setSimState("normal");
-    showToast("অনুসন্ধান করা হচ্ছে: Napa");
   };
 
   return (
@@ -304,42 +292,29 @@ export default function MedicineDatabasePage() {
           <MedicineRegistryHeader
             viewMode={viewMode}
             onViewModeChange={setViewMode}
-            simState={simState}
-            onToggleSimState={setSimState}
+            totalCount={filteredMedicines.length}
           />
 
           {/* Live Search & Intelligent Query Command Box */}
           <MedicineSearch
             value={searchQuery}
-            onChange={(val) => {
-              setSearchQuery(val);
-              if (simState !== "normal") setSimState("normal");
-            }}
+            onChange={(val) => setSearchQuery(val)}
             onFilterToggle={() => {
               showToast("স্মার্ট ফিল্টার সক্রিয়");
             }}
             onScanClick={() => {
-              showToast("বারকোড স্ক্যানার প্রস্তুত (ডেমো)");
+              showToast("বারকোড স্ক্যানার ফিচার শীঘ্রই আসছে");
             }}
           />
 
           {/* Multi-Filter Matrix Strip */}
           <MedicineFilter
             genericFilter={genericFilter}
-            onGenericChange={(val) => {
-              setGenericFilter(val);
-              if (simState !== "normal") setSimState("normal");
-            }}
+            onGenericChange={(val) => setGenericFilter(val)}
             dosageFormFilter={dosageFormFilter}
-            onDosageFormChange={(val) => {
-              setDosageFormFilter(val);
-              if (simState !== "normal") setSimState("normal");
-            }}
+            onDosageFormChange={(val) => setDosageFormFilter(val)}
             manufacturerFilter={manufacturerFilter}
-            onManufacturerChange={(val) => {
-              setManufacturerFilter(val);
-              if (simState !== "normal") setSimState("normal");
-            }}
+            onManufacturerChange={(val) => setManufacturerFilter(val)}
             sortBy={sortBy}
             onSortChange={setSortBy}
           />
@@ -355,7 +330,7 @@ export default function MedicineDatabasePage() {
           />
 
           {/* Interactive Results Area */}
-          {isLoading || simState === "skeleton" ? (
+          {isLoading ? (
             <MedicineLoadingState count={6} />
           ) : isError ? (
             <MedicineEmptyState
@@ -364,11 +339,6 @@ export default function MedicineDatabasePage() {
               errorMessage={errorMessage || undefined}
               onRetry={loadMedicines}
             />
-          ) : simState === "empty" ? (
-            <MedicineEmptyState
-              onResetFilters={resetFilters}
-              onQuickSearchNapa={setQuickSearchNapa}
-            />
           ) : medicines.length === 0 ? (
             <MedicineEmptyState
               onResetFilters={resetFilters}
@@ -376,10 +346,7 @@ export default function MedicineDatabasePage() {
               onRetry={loadMedicines}
             />
           ) : filteredMedicines.length === 0 ? (
-            <MedicineEmptyState
-              onResetFilters={resetFilters}
-              onQuickSearchNapa={setQuickSearchNapa}
-            />
+            <MedicineEmptyState onResetFilters={resetFilters} />
           ) : (
             <MedicineList
               medicines={filteredMedicines}
@@ -406,7 +373,7 @@ export default function MedicineDatabasePage() {
         <footer className="hidden lg:block w-full bg-surface-container-lowest py-space-md px-margin border-t border-[var(--color-border)] mt-auto">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-space-sm font-label-sm text-label-sm text-on-surface-variant max-w-7xl mx-auto">
             <p>
-              ঔষধBox v1.2.0 • বাংলাদেশ ফার্মাসিউটিক্যাল ডিরেক্টরি • তথ্যের উৎস: DGDA নির্দেশিকা (ডেমো) • শুধুমাত্র তথ্যগত সহায়তায়
+              ঔষধBox v1.2.0 • ব্যক্তিগত ফার্মাসিউটিক্যাল রেফারেন্স ও প্রাইস ওয়ার্কস্পেস
             </p>
             <div className="flex items-center gap-space-md">
               <span className="text-primary font-medium">হটলাইন: ১৬২৬৩</span>

@@ -1,256 +1,621 @@
 "use client";
 
 /**
- * ঔষধBox Home Dashboard
- * Phase 2 — Migrated from Stitch home_dashboard/code.html
- *
- * Layout:
- *  - Desktop: Sidebar (left) + main content area (right)
- *  - Mobile: Full-width scrollable content + fixed bottom nav
+ * OushodBox — Personal Medicine Reference & Price Workspace
+ * Modern, calm, mobile-first home dashboard.
+ * Zero demo data, real Firestore integration, instant global search.
  */
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-// Layout
+// Layout Components
 import Sidebar from "@/components/layout/Sidebar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 
-// Home sections
-import GreetingBanner from "@/components/home/GreetingBanner";
-import SearchBar from "@/components/home/SearchBar";
-import QuickActionCard from "@/components/home/QuickActionCard";
-import StatCard from "@/components/home/StatCard";
-import MedicineListItem, {
-  databaseMedicineToHomeItem,
-  type HomeMedicineItem,
-} from "@/components/home/MedicineListItem";
-import DgdaNoticePanel from "@/components/home/DgdaNoticePanel";
-import RecentActivityPanel from "@/components/home/RecentActivityPanel";
-import PwaInstallPanel from "@/components/home/PwaInstallPanel";
-
-// Data
+// Modal & Firestore
+import AdminAddMedicineModal from "@/components/admin/AdminAddMedicineModal";
 import {
-  DEMO_STATS,
-  QUICK_ACTIONS,
-} from "@/lib/mock-data";
-import { getMedicines as getFirestoreMedicines } from "@/lib/firestore/medicines";
-import { getMedicines as getCachedMedicines } from "@/lib/pwa/db";
+  getMedicines as getFirestoreMedicines,
+  addMedicine,
+  toAdminMedicineItem,
+} from "@/lib/firestore/medicines";
+import { getMedicines as getCachedMedicines, saveMedicines as setCachedMedicines } from "@/lib/pwa/db";
+import { subscribeToAuthChanges } from "@/lib/auth";
+import { toBengaliNumeral, shareToWhatsApp } from "@/lib/utils";
+import type { DatabaseMedicine, AdminMedicineItem } from "@/types";
 
 export default function HomePage() {
-  const [medicineListOpacity, setMedicineListOpacity] = useState(1);
-  const [notifCount] = useState(3);
-  const [medicines, setMedicines] = useState<HomeMedicineItem[]>([]);
+  const router = useRouter();
+  const [medicines, setMedicines] = useState<DatabaseMedicine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const medicineContainerRef = useRef<HTMLDivElement>(null);
+  const [isOnline, setIsOnline] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
-    async function loadHomeMedicines() {
-      setIsLoading(true);
-      try {
-        const docs = await getFirestoreMedicines();
-        if (isMounted) {
-          setMedicines(docs.slice(0, 6).map(databaseMedicineToHomeItem));
-        }
-      } catch {
-        try {
-          const cached = await getCachedMedicines();
-          if (isMounted) {
-            setMedicines(cached.slice(0, 6).map(databaseMedicineToHomeItem));
-          }
-        } catch {
-          if (isMounted) setMedicines([]);
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    }
-    loadHomeMedicines();
-    return () => {
-      isMounted = false;
-    };
+  // Quick Add Modal state
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Show brief toast
+  const showToast = useCallback((msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3200);
   }, []);
 
-  // Search feedback: flash opacity like the original Stitch JS
-  function handleSearch(query: string) {
-    setMedicineListOpacity(0.5);
-    setTimeout(() => setMedicineListOpacity(1), 300);
-  }
+  // Online / Offline listener
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsOnline(navigator.onLine);
+      const onOnline = () => setIsOnline(true);
+      const onOffline = () => setIsOnline(false);
+      window.addEventListener("online", onOnline);
+      window.addEventListener("offline", onOffline);
+      return () => {
+        window.removeEventListener("online", onOnline);
+        window.removeEventListener("offline", onOffline);
+      };
+    }
+  }, []);
+
+  // Auth state listener
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthChanges((user) => {
+      setUserEmail(user?.email || null);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Fetch medicines from Firestore (fallback to IndexedDB)
+  const fetchMedicines = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await getFirestoreMedicines();
+      setMedicines(data);
+      // Sync to cache
+      setCachedMedicines(data).catch(() => {});
+    } catch {
+      try {
+        const cached = await getCachedMedicines();
+        setMedicines(cached);
+      } catch {
+        setMedicines([]);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMedicines();
+  }, [fetchMedicines]);
+
+  // Handle Quick Add Medicine
+  const handleSaveMedicine = async (data: Partial<AdminMedicineItem>) => {
+    if (!userEmail) {
+      router.push("/admin");
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await addMedicine(data);
+      setIsAddModalOpen(false);
+      showToast(`"${data.tradeName}" সফলভাবে সংরক্ষণ করা হয়েছে`);
+      await fetchMedicines();
+    } catch (err: any) {
+      showToast(`সংরক্ষণ ব্যর্থ হয়েছে: ${err.message || "ত্রুটি"}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Instant global search filter
+  const filteredMedicines = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return medicines;
+    return medicines.filter((m) => {
+      const trade = (m.tradeName || "").toLowerCase();
+      const generic = (m.genericName || "").toLowerCase();
+      const company = (m.manufacturer || "").toLowerCase();
+      const dosage = (m.dosageBadge || m.dosageForm || "").toLowerCase();
+      return (
+        trade.includes(q) ||
+        generic.includes(q) ||
+        company.includes(q) ||
+        dosage.includes(q)
+      );
+    });
+  }, [medicines, searchQuery]);
+
+  // Real statistics derived from actual data
+  const totalCount = medicines.length;
+  const uniqueCompanies = useMemo(() => {
+    const set = new Set(
+      medicines.map((m) => m.manufacturer?.trim()).filter(Boolean)
+    );
+    return set.size;
+  }, [medicines]);
+
+  // Single-tap WhatsApp share
+  const handleWhatsAppShare = (med: DatabaseMedicine) => {
+    const strengthStr = (med as any).strength || med.dosageBadge || "";
+    shareToWhatsApp(
+      `${med.tradeName} ${strengthStr}`.trim(),
+      med.genericName || "—",
+      med.manufacturer || "—",
+      med.unitPriceFormatted || `৳ ${med.unitPrice.toFixed(2)}`
+    );
+  };
 
   return (
     <div className="flex min-h-dvh bg-canvas">
-      {/* Desktop Sidebar */}
+      {/* Desktop Navigation Sidebar */}
       <Sidebar />
 
-      {/* Main column */}
+      {/* Main Workspace Column */}
       <div className="flex-1 flex flex-col min-w-0">
-
-        {/* ── Top Header (mobile + desktop) ─────────────────── */}
-        <header className="sticky top-0 z-40 bg-surface/80 backdrop-blur-md border-b border-[var(--color-border)] px-space-margin-mobile lg:px-margin py-3 flex items-center justify-between">
-          {/* Mobile: logo */}
-          <div className="flex items-center gap-space-sm lg:hidden">
+        {/* Workspace Top Header */}
+        <header className="sticky top-0 z-40 bg-surface/90 backdrop-blur-md border-b border-[var(--color-border)] px-space-margin-mobile lg:px-margin py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs"
-              style={{ background: "linear-gradient(135deg, #059669 0%, #0d9488 100%)" }}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs shadow-xs"
+              style={{
+                background: "linear-gradient(135deg, #059669 0%, #0d9488 100%)",
+              }}
             >
               Rx
             </div>
-            <span className="font-headline-sm text-headline-sm font-bold text-on-surface">
-              ঔষধBox
-            </span>
+            <div>
+              <span className="font-headline-sm text-headline-sm font-bold text-on-surface">
+                ঔষধBox
+              </span>
+              <span className="hidden sm:inline-block ml-2 text-xs text-on-surface-variant font-medium">
+                ব্যক্তিগত ওষুধ ও মূল্য রেফারেন্স
+              </span>
+            </div>
           </div>
 
-          {/* Desktop: page title */}
-          <div className="hidden lg:flex items-center gap-space-xs text-on-surface-variant">
-            <span className="material-symbols-outlined text-lg" aria-hidden="true">home</span>
-            <h1 className="font-label-lg text-label-lg font-semibold text-on-surface">হোম ড্যাশবোর্ড</h1>
-          </div>
+          {/* Right Header Badges & Actions */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Sync & Connectivity Status */}
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
+                isOnline
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  : "bg-amber-50 text-amber-700 border-amber-200"
+              }`}
+            >
+              <span
+                className={`w-2 h-2 rounded-full ${
+                  isOnline ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                }`}
+              />
+              <span className="hidden xs:inline">
+                {isOnline ? "অনলাইন সিঙ্কড" : "অফলাইন ক্যাশ"}
+              </span>
+            </div>
 
-          {/* Right: actions */}
-          <div className="flex items-center gap-space-sm">
-            {/* Notification bell */}
+            {/* Quick Add Medicine button */}
             <button
               type="button"
-              className="relative p-2 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
-              aria-label={`${notifCount}টি নতুন নোটিফিকেশন`}
+              onClick={() => {
+                if (userEmail) {
+                  setIsAddModalOpen(true);
+                } else {
+                  router.push("/admin");
+                }
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all shadow-xs"
             >
-              <span className="material-symbols-outlined text-xl" aria-hidden="true">notifications</span>
-              {notifCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 bg-error text-on-error rounded-full text-[9px] flex items-center justify-center font-bold">
-                  {notifCount}
-                </span>
-              )}
-            </button>
-
-            {/* Settings (desktop only) */}
-            <button
-              type="button"
-              className="hidden lg:flex p-2 rounded-xl text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
-              aria-label="সেটিংস"
-            >
-              <span className="material-symbols-outlined text-xl" aria-hidden="true">settings</span>
+              <span className="material-symbols-outlined text-base">add</span>
+              <span>নতুন ওষুধ</span>
             </button>
           </div>
         </header>
 
-        {/* ── Main content ───────────────────────────────────── */}
-        <main className="flex-1 px-space-margin-mobile lg:px-margin py-space-md lg:py-space-lg flex flex-col gap-space-md pb-20 lg:pb-space-lg">
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div className="fixed top-16 right-4 z-50 bg-on-surface text-surface px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 text-sm font-medium transition-all animate-in fade-in slide-in-from-top-2">
+            <span className="material-symbols-outlined text-emerald-400 text-lg">
+              check_circle
+            </span>
+            <span>{toastMessage}</span>
+          </div>
+        )}
 
-          {/* 1. Greeting Banner */}
-          <GreetingBanner />
-
-          {/* 2. Search Bar */}
-          <SearchBar onSearch={handleSearch} />
-
-          {/* 3. Quick Actions Grid */}
-          <section aria-label="দ্রুত কার্যক্রম">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md">
-              {QUICK_ACTIONS.map((action) => (
-                <QuickActionCard key={action.id} action={action} />
-              ))}
+        {/* Main Content Area */}
+        <main className="flex-1 px-space-margin-mobile lg:px-margin py-5 sm:py-6 flex flex-col gap-6 pb-24 lg:pb-8 max-w-7xl mx-auto w-full">
+          {/* Workspace Search Hero */}
+          <section
+            className="rounded-2xl bg-surface-container-lowest p-4 sm:p-6 border border-[var(--color-border)] shadow-xs flex flex-col gap-4"
+            aria-label="ওষুধ অনুসন্ধান"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h1 className="text-xl sm:text-2xl font-bold text-on-surface">
+                  ওষুধ খুঁজুন
+                </h1>
+                <p className="text-xs sm:text-sm text-on-surface-variant mt-0.5">
+                  নাম, জেনেরিক বা কোম্পানি দিয়ে তাৎক্ষণিক খুঁজুন (বাংলা বা ইংরেজি)
+                </p>
+              </div>
+              <div className="text-xs text-on-surface-variant font-medium bg-surface-container-low px-3 py-1.5 rounded-lg self-start sm:self-auto border border-[var(--color-border)]">
+                মোট সংরক্ষিত:{" "}
+                <span className="font-bold text-primary">
+                  {toBengaliNumeral(totalCount)}
+                </span>
+              </div>
             </div>
-          </section>
 
-          {/* 4. Statistics Row */}
-          <section aria-label="পরিসংখ্যান">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-space-md">
-              {DEMO_STATS.map((stat) => (
-                <StatCard key={stat.label} stat={stat} />
-              ))}
-            </div>
-          </section>
-
-          {/* 5 + 6. Main 12-col content layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-space-md">
-
-            {/* LEFT 8 cols: Medicine list */}
-            <section className="lg:col-span-8 flex flex-col gap-space-md" aria-label="সাম্প্রতিক ঔষধ তালিকা">
-              {/* Section header */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-space-xs">
-                  <span className="material-symbols-outlined text-primary text-xl" aria-hidden="true">medication</span>
-                  <h2 className="font-headline-sm text-headline-sm font-semibold text-on-surface">
-                    সাম্প্রতিক ঔষধ রেকর্ড
-                  </h2>
-                </div>
-                <Link
-                  href="/medicines"
-                  className="flex items-center gap-0.5 font-label-sm text-label-sm text-primary font-semibold hover:underline"
+            {/* Dominant Live Search Input */}
+            <div className="relative flex items-center bg-surface-container-low focus-within:bg-surface rounded-xl px-4 py-1 border border-[var(--color-border)] focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/10 transition-all shadow-xs">
+              <span className="material-symbols-outlined text-primary text-2xl mr-3 shrink-0">
+                search
+              </span>
+              <input
+                id="workspace-medicine-search"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="যেমন: Napa, নাপা, Paracetamol, প্যারাসিটামল, Square, Beximco..."
+                className="w-full bg-transparent py-3 text-sm sm:text-base text-on-surface placeholder:text-on-surface-variant/60 focus:outline-none"
+                autoComplete="off"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="p-1 rounded-full text-on-surface-variant hover:text-on-surface hover:bg-surface-container transition-colors"
+                  aria-label="অনুসন্ধান মুছুন"
                 >
-                  সব দেখুন
-                  <span className="material-symbols-outlined text-sm" aria-hidden="true">chevron_right</span>
-                </Link>
-              </div>
+                  <span className="material-symbols-outlined text-lg">close</span>
+                </button>
+              )}
+            </div>
 
-              {/* Medicine records */}
-              <div
-                ref={medicineContainerRef}
-                id="medicine-records-container"
-                className="flex flex-col gap-space-sm transition-opacity duration-300"
-                style={{ opacity: medicineListOpacity }}
-                aria-live="polite"
-                aria-label="ঔষধ তালিকা"
+            {/* Fast Quick Filter Tags */}
+            <div className="flex items-center gap-2 flex-wrap text-xs text-on-surface-variant">
+              <span className="font-medium text-on-surface">দ্রুত শর্টকাট:</span>
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className={`px-2.5 py-1 rounded-lg border transition-all ${
+                  searchQuery === ""
+                    ? "bg-primary text-on-primary border-primary font-semibold"
+                    : "bg-surface-container-low border-[var(--color-border)] hover:bg-surface-container"
+                }`}
               >
-                {isLoading ? (
-                  <div className="p-8 text-center text-on-surface-variant font-body-sm flex flex-col items-center justify-center gap-2">
-                    <span className="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>
-                    <span>ঔষধ তালিকা লোড হচ্ছে...</span>
-                  </div>
-                ) : medicines.length > 0 ? (
-                  medicines.map((medicine) => (
-                    <MedicineListItem key={medicine.id} medicine={medicine} />
-                  ))
-                ) : (
-                  <div className="p-8 text-center rounded-xl bg-surface-container-lowest border border-dashed border-[var(--color-border)]">
-                    <span className="material-symbols-outlined text-3xl text-outline mb-2">medication</span>
-                    <p className="font-headline-sm text-on-surface font-semibold">কোনো ঔষধ পাওয়া যায়নি</p>
-                    <p className="font-body-sm text-on-surface-variant mt-1">ডেটাবেসে কোনো রেকর্ড নেই। এডমিন প্যানেল থেকে ঔষধ যোগ করুন।</p>
-                    <Link
-                      href="/admin"
-                      className="mt-4 inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-primary text-on-primary text-label-sm font-semibold hover:opacity-90 transition-opacity"
-                    >
-                      <span className="material-symbols-outlined text-base">add</span>
-                      এডমিন প্যানেলে যান
-                    </Link>
-                  </div>
-                )}
-              </div>
+                সকল ওষুধ
+              </button>
+              <button
+                type="button"
+                onClick={() => setSearchQuery("ট্যাবলেট")}
+                className="px-2.5 py-1 rounded-lg bg-surface-container-low border border-[var(--color-border)] hover:bg-surface-container transition-all"
+              >
+                ট্যাবলেট
+              </button>
+              <button
+                type="button"
+                onClick={() => setSearchQuery("ক্যাপসুল")}
+                className="px-2.5 py-1 rounded-lg bg-surface-container-low border border-[var(--color-border)] hover:bg-surface-container transition-all"
+              >
+                ক্যাপসুল
+              </button>
+              <button
+                type="button"
+                onClick={() => setSearchQuery("সিরাপ")}
+                className="px-2.5 py-1 rounded-lg bg-surface-container-low border border-[var(--color-border)] hover:bg-surface-container transition-all"
+              >
+                সিরাপ
+              </button>
+            </div>
+          </section>
 
-              {/* Load more / All medicines */}
+          {/* Real Metrics Overview */}
+          <section className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4" aria-label="পরিসংখ্যান">
+            <div className="p-4 rounded-xl bg-surface-container-lowest border border-[var(--color-border)] shadow-xs flex flex-col">
+              <span className="text-xs text-on-surface-variant font-medium">
+                মোট সংরক্ষিত ওষুধ
+              </span>
+              <span className="text-2xl font-bold text-on-surface mt-1">
+                {isLoading ? "..." : toBengaliNumeral(totalCount)}
+              </span>
+              <span className="text-[11px] text-emerald-600 font-medium mt-0.5">
+                রিয়েল ফায়ারস্টোর ডেটা
+              </span>
+            </div>
+
+            <div className="p-4 rounded-xl bg-surface-container-lowest border border-[var(--color-border)] shadow-xs flex flex-col">
+              <span className="text-xs text-on-surface-variant font-medium">
+                প্রস্তুতকারক কোম্পানি
+              </span>
+              <span className="text-2xl font-bold text-on-surface mt-1">
+                {isLoading ? "..." : toBengaliNumeral(uniqueCompanies)}
+              </span>
+              <span className="text-[11px] text-on-surface-variant mt-0.5">
+                কোম্পানির তালিকা
+              </span>
+            </div>
+
+            <div className="col-span-2 sm:col-span-1 p-4 rounded-xl bg-surface-container-lowest border border-[var(--color-border)] shadow-xs flex flex-col justify-between">
+              <div>
+                <span className="text-xs text-on-surface-variant font-medium">
+                  দ্রুত কার্যপ্রণালী
+                </span>
+                <div className="flex items-center gap-2 mt-2">
+                  <Link
+                    href="/medicines"
+                    className="flex-1 text-center py-1.5 px-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-xs font-semibold text-on-surface transition-colors"
+                  >
+                    সম্পূর্ণ ডাটাবেস
+                  </Link>
+                  <Link
+                    href="/whatsapp-share"
+                    className="flex-1 text-center py-1.5 px-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-xs font-semibold text-emerald-700 transition-colors"
+                  >
+                    হোয়াটসঅ্যাপ
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Medicine List & Results */}
+          <section className="flex flex-col gap-3" aria-label="ওষুধ তালিকা">
+            {/* Header / Active status */}
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-xl">
+                  {searchQuery ? "filter_list" : "history"}
+                </span>
+                <h2 className="text-base sm:text-lg font-bold text-on-surface">
+                  {searchQuery
+                    ? `অনুসন্ধান ফলাফল (${toBengaliNumeral(filteredMedicines.length)}টি ওষুধ)`
+                    : "সাম্প্রতিক সংরক্ষিত ওষুধ"}
+                </h2>
+              </div>
               <Link
                 href="/medicines"
-                className="w-full py-3 rounded-xl border border-[var(--color-border)] text-on-surface-variant font-label-md text-label-md hover:bg-surface-container hover:text-on-surface transition-all flex items-center justify-center gap-space-xs"
+                className="text-xs sm:text-sm text-primary font-semibold hover:underline flex items-center gap-0.5"
               >
-                <span className="material-symbols-outlined text-base" aria-hidden="true">database</span>
-                সকল ঔষধ ডাটাবেস দেখুন
+                <span>সব দেখুন</span>
+                <span className="material-symbols-outlined text-base">
+                  chevron_right
+                </span>
               </Link>
-            </section>
+            </div>
 
-            {/* RIGHT 4 cols: Activity + Notices + PWA */}
-            <aside className="lg:col-span-4 flex flex-col gap-space-md" aria-label="সহায়তা প্যানেল">
-              <RecentActivityPanel />
-              <DgdaNoticePanel />
-              <PwaInstallPanel />
-            </aside>
-          </div>
+            {/* List Container */}
+            {isLoading ? (
+              /* Loading Skeletons */
+              <div className="flex flex-col gap-3">
+                {[1, 2, 3, 4].map((n) => (
+                  <div
+                    key={n}
+                    className="p-4 rounded-xl bg-surface-container-lowest border border-[var(--color-border)] animate-pulse flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-surface-container-high" />
+                      <div className="flex flex-col gap-1.5">
+                        <div className="w-32 h-4 rounded bg-surface-container-high" />
+                        <div className="w-24 h-3 rounded bg-surface-container" />
+                      </div>
+                    </div>
+                    <div className="w-16 h-5 rounded bg-surface-container-high" />
+                  </div>
+                ))}
+              </div>
+            ) : totalCount === 0 ? (
+              /* Empty State when Database has Zero Medicines */
+              <div className="p-8 sm:p-12 text-center rounded-2xl bg-surface-container-lowest border border-dashed border-[var(--color-border)] flex flex-col items-center justify-center gap-3">
+                <div className="w-14 h-14 rounded-2xl bg-surface-container-low flex items-center justify-center text-outline">
+                  <span className="material-symbols-outlined text-3xl text-primary">
+                    medication
+                  </span>
+                </div>
+                <div className="max-w-md">
+                  <h3 className="text-lg font-bold text-on-surface">
+                    আপনার ওষুধ ডেটাবেস বর্তমানে খালি
+                  </h3>
+                  <p className="text-xs sm:text-sm text-on-surface-variant mt-1 leading-relaxed">
+                    ওষুধের নাম, প্রস্তুতকারক কোম্পানি ও রেফারেন্স মূল্য তালিকা সহজে সংরক্ষণ করতে আপনার প্রথম ওষুধটি যুক্ত করুন।
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (userEmail) {
+                      setIsAddModalOpen(true);
+                    } else {
+                      router.push("/admin");
+                    }
+                  }}
+                  className="mt-2 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-primary-dark transition-all shadow-xs"
+                >
+                  <span className="material-symbols-outlined text-base">add</span>
+                  <span>প্রথম ওষুধ যোগ করুন</span>
+                </button>
+              </div>
+            ) : filteredMedicines.length === 0 ? (
+              /* No Search Match State */
+              <div className="p-8 text-center rounded-2xl bg-surface-container-lowest border border-[var(--color-border)] flex flex-col items-center justify-center gap-2">
+                <span className="material-symbols-outlined text-3xl text-on-surface-variant">
+                  search_off
+                </span>
+                <p className="text-sm font-semibold text-on-surface">
+                  &ldquo;{searchQuery}&rdquo; দিয়ে কোনো ওষুধ পাওয়া যায়নি
+                </p>
+                <p className="text-xs text-on-surface-variant">
+                  বানান সঠিক কিনা যাচাই করুন অথবা অন্য নাম দিয়ে চেষ্টা করুন।
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="mt-2 px-3 py-1.5 rounded-lg border border-[var(--color-border)] text-xs font-semibold text-on-surface hover:bg-surface-container transition-colors"
+                >
+                  অনুসন্ধান ক্লিয়ার করুন
+                </button>
+              </div>
+            ) : (
+              /* Render Real Medicine Cards / Rows */
+              <div className="flex flex-col gap-2.5">
+                {filteredMedicines.slice(0, 10).map((med) => {
+                  const strengthStr =
+                    (med as any).strength || med.dosageBadge || "";
+                  const isCapsule =
+                    (med.dosageBadge || "").includes("ক্যাপসুল") ||
+                    med.dosageForm === "capsule";
+                  const isLiquid =
+                    (med.dosageBadge || "").includes("সিরাপ") ||
+                    med.dosageForm === "syrup";
+                  const isInjection =
+                    (med.dosageBadge || "").includes("ইনজেকশন") ||
+                    med.dosageForm === "injection";
+
+                  const badgeText = isInjection
+                    ? "INJ"
+                    : isLiquid
+                    ? "SYR"
+                    : isCapsule
+                    ? "CAP"
+                    : "TAB";
+
+                  return (
+                    <div
+                      key={med.id}
+                      className="group p-3.5 sm:p-4 rounded-xl bg-surface-container-lowest hover:bg-surface-container-low border border-[var(--color-border)] transition-all shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    >
+                      {/* Left: Icon + Info */}
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-surface-container-high flex flex-col items-center justify-center shrink-0 text-primary font-bold text-xs">
+                          <span>{badgeText}</span>
+                          <span className="material-symbols-outlined text-sm -mt-0.5">
+                            {isInjection
+                              ? "vaccines"
+                              : isLiquid
+                              ? "water_drop"
+                              : "medication"}
+                          </span>
+                        </div>
+
+                        <div className="flex flex-col min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Link
+                              href={`/medicines/${med.id}`}
+                              className="font-bold text-sm sm:text-base text-on-surface group-hover:text-primary transition-colors truncate"
+                            >
+                              {med.tradeName}
+                            </Link>
+                            {strengthStr && (
+                              <span className="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant text-[11px] font-medium">
+                                {strengthStr}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 text-xs text-on-surface-variant mt-0.5 flex-wrap">
+                            <span className="truncate">
+                              {med.genericName || "জেনেরিক তথ্য নেই"}
+                            </span>
+                            <span className="text-outline/50">•</span>
+                            <span className="font-medium text-on-surface/80 truncate">
+                              {med.manufacturer || "অনির্ধারিত কোম্পানি"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right: Price & Fast Actions */}
+                      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[var(--color-border)]">
+                        {/* Price Display */}
+                        <div className="flex flex-col sm:items-end">
+                          <span className="text-base font-bold text-primary leading-tight">
+                            {med.unitPriceFormatted ||
+                              `৳ ${med.unitPrice.toFixed(2)}`}
+                          </span>
+                          {med.packSize && (
+                            <span className="text-[11px] text-on-surface-variant">
+                              প্যাক: {med.packSize}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-1.5">
+                          {/* WhatsApp 1-tap Share */}
+                          <button
+                            type="button"
+                            onClick={() => handleWhatsAppShare(med)}
+                            className="p-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 transition-colors"
+                            title="হোয়াটসঅ্যাপে শেয়ার করুন"
+                            aria-label={`${med.tradeName} হোয়াটসঅ্যাপে শেয়ার`}
+                          >
+                            <span className="material-symbols-outlined text-lg">
+                              share
+                            </span>
+                          </button>
+
+                          {/* View details */}
+                          <Link
+                            href={`/medicines/${med.id}`}
+                            className="p-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant transition-colors"
+                            title="বিস্তারিত বিবরণ"
+                            aria-label={`${med.tradeName} বিস্তারিত`}
+                          >
+                            <span className="material-symbols-outlined text-lg">
+                              visibility
+                            </span>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {filteredMedicines.length > 10 && (
+                  <Link
+                    href="/medicines"
+                    className="mt-2 py-2.5 text-center text-xs sm:text-sm font-semibold text-primary hover:bg-surface-container-low rounded-xl border border-[var(--color-border)] transition-colors"
+                  >
+                    আরও {toBengaliNumeral(filteredMedicines.length - 10)}টি ওষুধ দেখতে ডেটাবেসে যান
+                  </Link>
+                )}
+              </div>
+            )}
+          </section>
         </main>
 
-        {/* ── Desktop Footer ─────────────────────────────────── */}
-        <footer className="hidden lg:block w-full bg-surface-container-lowest py-space-md px-margin border-t border-[var(--color-border)]">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-space-sm font-label-sm text-label-sm text-on-surface-variant">
+        {/* Minimal Footer */}
+        <footer className="hidden lg:block w-full bg-surface-container-lowest py-3 px-margin border-t border-[var(--color-border)]">
+          <div className="flex items-center justify-between text-xs text-on-surface-variant max-w-7xl mx-auto">
             <p>
-              ঔষধBox v1.2.0 — ফার্মাসিউটিক্যাল ম্যানেজমেন্ট সিস্টেম — তথ্যসূত্র: DGDA নিবন্ধিত
+              ঔষধBox — ব্যক্তিগত মেডিসিন রেফারেন্স ও মূল্য তালিকা ওয়ার্কস্পেস
             </p>
-            <div className="flex items-center gap-space-md">
-              <span className="text-primary font-medium">বাংলাদেশ: ঢাকা-১২০৮</span>
-              <span className="text-secondary font-medium">Rx লাইসেন্স প্রাপ্ত</span>
+            <div className="flex items-center gap-3">
+              <span>{isOnline ? "ক্লাউড সিঙ্ক সক্রিয়" : "অফলাইন মোড"}</span>
+              <span>•</span>
+              <Link href="/admin" className="hover:text-primary font-medium">
+                অ্যাডমিন কনসোল
+              </Link>
             </div>
           </div>
         </footer>
       </div>
 
-      {/* Mobile Bottom Nav */}
+      {/* Quick Add Medicine Modal */}
+      <AdminAddMedicineModal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          if (!isSubmitting) setIsAddModalOpen(false);
+        }}
+        onSave={handleSaveMedicine}
+        editingMedicine={null}
+        isSubmitting={isSubmitting}
+      />
+
+      {/* Mobile Fixed Bottom Navigation */}
       <MobileBottomNav />
     </div>
   );
