@@ -5,11 +5,20 @@
  * Faithfully migrated from Stitch admin_panel/code.html
  */
 
-import { useState, useMemo, useTransition } from "react";
+import { useState, useMemo, useTransition, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   DEMO_ADMIN_MEDICINES,
   DEMO_ADMIN_AUDIT_LOGS,
 } from "@/lib/mock-data";
+import {
+  getMedicines,
+  addMedicine,
+  updateMedicine,
+  deleteMedicine,
+  toAdminMedicineItem,
+} from "@/lib/firestore/medicines";
+import { logout, subscribeToAuthChanges } from "@/lib/auth";
 import type {
   AdminMedicineItem,
   AdminAuditLogItem,
@@ -25,11 +34,15 @@ import AdminAddMedicineModal from "./AdminAddMedicineModal";
 import AdminDeleteConfirmModal from "./AdminDeleteConfirmModal";
 
 export default function AdminPanelClient() {
+  const router = useRouter();
   const [, startTransition] = useTransition();
 
   // Core Data States
   const [medicines, setMedicines] = useState<AdminMedicineItem[]>(DEMO_ADMIN_MEDICINES);
   const [auditLogs, setAuditLogs] = useState<AdminAuditLogItem[]>(DEMO_ADMIN_AUDIT_LOGS);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   // Tab state
   const [activeTab, setActiveTab] = useState<AdminModuleTabKey>("medicines");
@@ -59,6 +72,63 @@ export default function AdminPanelClient() {
       setToastMessage((current) => (current === msg ? null : current));
     }, 4000);
   };
+
+  // Track auth state
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthChanges((user) => {
+      if (user) {
+        setUserEmail(user.email || null);
+      } else {
+        router.replace("/admin/login");
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.replace("/admin/login");
+    } catch (err) {
+      console.error("[AdminPanel] Logout error:", err);
+      showToast("লগআউট ব্যর্থ হয়েছে।");
+    }
+  };
+
+  // Load medicines from Firestore on mount with graceful fallback to mock data
+  useEffect(() => {
+    let isMounted = true;
+    async function loadData() {
+      try {
+        setIsLoading(true);
+        const remoteMeds = await getMedicines();
+        if (isMounted) {
+          if (remoteMeds && remoteMeds.length > 0) {
+            setMedicines(remoteMeds.map(toAdminMedicineItem));
+          } else {
+            // Firestore empty -> gracefully fallback to DEMO_ADMIN_MEDICINES
+            setMedicines(DEMO_ADMIN_MEDICINES);
+          }
+        }
+      } catch (err) {
+        console.warn("[AdminPanel] Failed to fetch Firestore medicines, using fallback mock data:", err);
+        if (isMounted) {
+          setMedicines(DEMO_ADMIN_MEDICINES);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Filtered & Sorted Medicines
   const filteredMedicines = useMemo(() => {
@@ -145,12 +215,12 @@ export default function AdminPanelClient() {
       setMedicines((prev) => prev.filter((m) => !selectedIds.has(m.id)));
       setSelectedIds(new Set());
 
-      // Add to audit log
+      // Add to audit log (client-side)
       const newAudit: AdminAuditLogItem = {
         id: `aud-${Date.now()}`,
         title: `বাল্ক ডিলিট: ${count}টি ওষুধ ডাটাবেস থেকে সরানো হয়েছে`,
         timeAgo: "এখনই",
-        meta: "অ্যাডমিন ইউজার: Faruk A.",
+        meta: "অ্যাডমিন ইউজার: Faruk A. • ক্লায়েন্ট-সাইড সেশন লগ",
         icon: "delete",
         type: "delete",
       };
@@ -168,12 +238,12 @@ export default function AdminPanelClient() {
       );
       setSelectedIds(new Set());
 
-      // Add to audit log
+      // Add to audit log (client-side)
       const newAudit: AdminAuditLogItem = {
         id: `aud-${Date.now()}`,
         title: `বাল্ক অনুমোদন: ${count}টি ওষুধ লাইভ প্রকাশ করা হয়েছে`,
         timeAgo: "এখনই",
-        meta: "অ্যাডমিন ইউজার: Faruk A.",
+        meta: "অ্যাডমিন ইউজার: Faruk A. • ক্লায়েন্ট-সাইড সেশন লগ",
         icon: "verified_user",
         type: "update",
       };
@@ -193,41 +263,87 @@ export default function AdminPanelClient() {
     setIsAddModalOpen(true);
   };
 
-  const handleSaveMedicine = (data: Partial<AdminMedicineItem>) => {
-    startTransition(() => {
-      if (editingMedicine) {
-        // Update existing item
+  const handleSaveMedicine = async (data: Partial<AdminMedicineItem>) => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
+    if (editingMedicine) {
+      // 1. Update existing item in Firestore
+      const updatePayload = {
+        tradeName: data.tradeName,
+        genericName: data.genericName,
+        manufacturer: data.manufacturer,
+        dosageForm: data.dosageForm,
+        strength: data.strength,
+        mrp: data.mrp,
+        mrpFormatted: data.mrpFormatted,
+        discountPct: data.discountPct,
+        status: data.status,
+        iconType: data.iconType,
+        notes: data.notes,
+        unitPrice: data.mrp,
+        unitPriceFormatted: data.mrpFormatted,
+        dosageBadge: data.dosageForm,
+        lastUpdated: "এখনই",
+        updatedTimestamp: Date.now(),
+      };
+
+      try {
+        await updateMedicine(editingMedicine.id, updatePayload);
+
         setMedicines((prev) =>
-          prev.map((m) => (m.id === editingMedicine.id ? ({ ...m, ...data } as AdminMedicineItem) : m))
+          prev.map((m) =>
+            m.id === editingMedicine.id
+              ? ({ ...m, ...data, updatedAt: "এখনই" } as AdminMedicineItem)
+              : m
+          )
         );
 
         const newAudit: AdminAuditLogItem = {
           id: `aud-${Date.now()}`,
           title: `ফারুক আহমেদ (A-Grade) ${data.tradeName || editingMedicine.tradeName} আপডেট করেছেন`,
           timeAgo: "এখনই",
-          meta: "ম্যানুয়াল ড্রাগ এডিট",
+          meta: "ম্যানুয়াল ড্রাগ এডিট • ক্লায়েন্ট-সাইড সেশন লগ",
           icon: "edit",
           type: "update",
         };
         setAuditLogs((prev) => [newAudit, ...prev]);
         showToast("ওষুধের তথ্য সফলভাবে আপডেট করা হয়েছে!");
-      } else {
-        // Create new item
-        const newItem: AdminMedicineItem = {
-          id: `adm-${Date.now()}`,
-          tradeName: data.tradeName || "New Drug",
-          strength: data.strength || "500mg",
-          dosageForm: data.dosageForm || "Tablet",
-          genericName: data.genericName || "Generic",
-          manufacturer: data.manufacturer || "Square Pharma",
-          mrp: data.mrp || 10,
-          mrpFormatted: data.mrpFormatted || "৳ ১০.০০",
-          discountPct: data.discountPct || 5,
-          status: data.status || "live",
-          iconType: data.iconType || "pill",
-          notes: data.notes || "",
-          updatedAt: "এখনই",
-        };
+        setIsAddModalOpen(false);
+        setEditingMedicine(null);
+      } catch (error) {
+        console.error("[AdminPanel] Failed to update medicine in Firestore:", error);
+        showToast("ওষুধ আপডেট করতে ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।");
+      } finally {
+        setIsSubmitting(false);
+      }
+    } else {
+      // 2. Create new item in Firestore
+      const newPayload = {
+        tradeName: data.tradeName || "New Drug",
+        strength: data.strength || "500mg",
+        dosageForm: data.dosageForm || "Tablet",
+        genericName: data.genericName || "Generic",
+        manufacturer: data.manufacturer || "Square Pharma",
+        mrp: data.mrp || 10,
+        mrpFormatted: data.mrpFormatted || "৳ ১০.০০",
+        discountPct: data.discountPct || 5,
+        status: data.status || "live",
+        iconType: data.iconType || "pill",
+        notes: data.notes || "",
+        unitPrice: data.mrp || 10,
+        unitPriceFormatted: data.mrpFormatted || "৳ ১০.০০",
+        dosageBadge: data.dosageForm || "ট্যাবলেট",
+        unitPriceUnit: "/পিস",
+        isRx: data.status === "pending",
+        stockStatus: "স্টক পর্যাপ্ত",
+        lastUpdated: "এখনই",
+        updatedTimestamp: Date.now(),
+      };
+
+      try {
+        const created = await addMedicine(newPayload);
+        const newItem = toAdminMedicineItem(created);
 
         setMedicines((prev) => [newItem, ...prev]);
 
@@ -235,17 +351,21 @@ export default function AdminPanelClient() {
           id: `aud-${Date.now()}`,
           title: `নতুন ওষুধ ${newItem.tradeName} ডাটাবেসে যোগ করা হয়েছে`,
           timeAgo: "এখনই",
-          meta: "লাইভ রেজিস্ট্রি এন্ট্রি",
+          meta: "লাইভ রেজিস্ট্রি এন্ট্রি • ক্লায়েন্ট-সাইড সেশন লগ",
           icon: "add_circle",
           type: "create",
         };
         setAuditLogs((prev) => [newAudit, ...prev]);
         showToast("সফলভাবে ওষুধটি ডাটাবেসে নথিভুক্ত হয়েছে!");
+        setIsAddModalOpen(false);
+        setEditingMedicine(null);
+      } catch (error) {
+        console.error("[AdminPanel] Failed to save medicine to Firestore:", error);
+        showToast("ওষুধ সংরক্ষণ করতে ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।");
+      } finally {
+        setIsSubmitting(false);
       }
-
-      setIsAddModalOpen(false);
-      setEditingMedicine(null);
-    });
+    }
   };
 
   // Delete Drug Handlers
@@ -253,11 +373,14 @@ export default function AdminPanelClient() {
     setDeletingMedicine(item);
   };
 
-  const handleConfirmDelete = () => {
-    if (!deletingMedicine) return;
+  const handleConfirmDelete = async () => {
+    if (!deletingMedicine || isSubmitting) return;
     const target = deletingMedicine;
+    setIsSubmitting(true);
 
-    startTransition(() => {
+    try {
+      await deleteMedicine(target.id);
+
       setMedicines((prev) => prev.filter((m) => m.id !== target.id));
       setSelectedIds((prev) => {
         const next = new Set(prev);
@@ -269,14 +392,19 @@ export default function AdminPanelClient() {
         id: `aud-${Date.now()}`,
         title: `${target.tradeName} রেকর্ড ডাটাবেস থেকে মুছে ফেলা হয়েছে`,
         timeAgo: "এখনই",
-        meta: `DEL_REF_${target.id}`,
+        meta: `DEL_REF_${target.id} • ক্লায়েন্ট-সাইড সেশন লগ`,
         icon: "delete_forever",
         type: "delete",
       };
       setAuditLogs((prev) => [newAudit, ...prev]);
       showToast("রেকর্ডটি স্থায়ীভাবে অপসারণ করা হয়েছে।");
       setDeletingMedicine(null);
-    });
+    } catch (error) {
+      console.error("[AdminPanel] Failed to delete medicine from Firestore:", error);
+      showToast("রেকর্ড মুছে ফেলতে ব্যর্থ হয়েছে। পুনরায় চেষ্টা করুন।");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Extra Mock Actions
@@ -326,6 +454,8 @@ export default function AdminPanelClient() {
         pendingCount={pendingCount}
         registeredUsers={128}
         systemHealth={100}
+        onLogout={handleLogout}
+        userEmail={userEmail || undefined}
       />
 
       {/* 2. Admin Module Navigation Tabs */}
@@ -432,19 +562,27 @@ export default function AdminPanelClient() {
       <AdminAddMedicineModal
         isOpen={isAddModalOpen}
         onClose={() => {
-          setIsAddModalOpen(false);
-          setEditingMedicine(null);
+          if (!isSubmitting) {
+            setIsAddModalOpen(false);
+            setEditingMedicine(null);
+          }
         }}
         onSave={handleSaveMedicine}
         editingMedicine={editingMedicine}
+        isSubmitting={isSubmitting}
       />
 
       {/* Delete Confirmation Modal */}
       <AdminDeleteConfirmModal
         isOpen={!!deletingMedicine}
-        onClose={() => setDeletingMedicine(null)}
+        onClose={() => {
+          if (!isSubmitting) {
+            setDeletingMedicine(null);
+          }
+        }}
         onConfirm={handleConfirmDelete}
         medicine={deletingMedicine}
+        isSubmitting={isSubmitting}
       />
     </div>
   );

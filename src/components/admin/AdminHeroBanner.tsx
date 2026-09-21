@@ -12,6 +12,8 @@ interface AdminHeroBannerProps {
   pendingCount: number;
   registeredUsers?: number;
   systemHealth?: number;
+  onLogout?: () => void;
+  userEmail?: string;
 }
 
 export default function AdminHeroBanner({
@@ -19,6 +21,8 @@ export default function AdminHeroBanner({
   pendingCount,
   registeredUsers = 128,
   systemHealth = 100,
+  onLogout,
+  userEmail,
 }: AdminHeroBannerProps) {
   return (
     <div className="relative overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm p-space-lg border border-[var(--color-border)]">
@@ -42,6 +46,17 @@ export default function AdminHeroBanner({
             <span className="px-space-xs py-0.5 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm">
               ডেমো কন্ট্রোল সেন্টার
             </span>
+            {onLogout && (
+              <button
+                onClick={onLogout}
+                type="button"
+                className="px-2.5 py-0.5 rounded-full bg-error/10 text-error hover:bg-error hover:text-on-error font-label-sm text-label-sm font-semibold transition-all flex items-center gap-1 cursor-pointer border border-error/20"
+                title={userEmail ? `লগড-ইন: ${userEmail}` : "লগআউট করুন"}
+              >
+                <span className="material-symbols-outlined text-sm">logout</span>
+                <span>লগআউট</span>
+              </button>
+            )}
           </div>
 
           <h1 className="font-headline-lg text-headline-lg text-on-surface font-bold tracking-tight mt-1">

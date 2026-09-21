@@ -1,13 +1,8 @@
-/**
- * Medicine Details Monograph Page — /medicines/[id]
- *
- * Full migration from Stitch medicine_details/code.html.
- * ⚠️ DEMO / MOCK DATA ONLY — Not real medical advice.
- */
-
-import { getMedicineMonograph } from "@/lib/mock-data";
+import { getMedicineById, buildMonographFromMedicine } from "@/lib/firestore/medicines";
 import MedicineDetailsClient from "@/components/medicine/MedicineDetailsClient";
 import MedicineNotFound from "@/components/medicine/MedicineNotFound";
+
+export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -15,11 +10,18 @@ interface PageProps {
 
 export default async function MedicineDetailPage({ params }: PageProps) {
   const { id } = await params;
-  const monograph = getMedicineMonograph(id);
 
-  if (!monograph) {
+  try {
+    const medicine = await getMedicineById(id);
+
+    if (!medicine) {
+      return <MedicineNotFound id={id} />;
+    }
+
+    const monograph = buildMonographFromMedicine(medicine);
+    return <MedicineDetailsClient monograph={monograph} />;
+  } catch (error) {
+    console.warn(`[MedicineDetailPage] Failed to fetch medicine ${id} from Firestore:`, error);
     return <MedicineNotFound id={id} />;
   }
-
-  return <MedicineDetailsClient monograph={monograph} />;
 }

@@ -31,7 +31,7 @@ export default function MedicineNotFound({ id }: MedicineNotFoundProps) {
             </h1>
 
             <p className="font-body-md text-body-md text-on-surface-variant mt-2 mb-space-lg leading-relaxed">
-              আপনার অনুসন্ধানকৃত ওষুধ আইডি &ldquo;<span className="font-mono text-error font-semibold">{id}</span>&rdquo; আমাদের ডেমো ডাটাবেজে অন্তর্ভুক্ত নেই।
+              আপনার অনুসন্ধানকৃত ওষুধ আইডি &ldquo;<span className="font-mono text-error font-semibold">{id}</span>&rdquo; আমাদের ডাটাবেজে অন্তর্ভুক্ত নেই।
             </p>
 
             <Link

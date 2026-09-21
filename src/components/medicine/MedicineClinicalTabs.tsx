@@ -242,12 +242,18 @@ export default function MedicineClinicalTabs({ monograph }: MedicineClinicalTabs
                 {clinicalGuide.interactions.overview}
               </p>
               <div className="space-y-2 mt-1">
-                {clinicalGuide.interactions.items.map((item, i) => (
-                  <div key={i} className="p-2.5 rounded-lg bg-surface-container-lowest text-body-sm">
-                    <strong className="text-on-surface font-semibold">{item.drug}:</strong>{" "}
-                    <span className="text-on-surface-variant">{item.effect}</span>
-                  </div>
-                ))}
+                {clinicalGuide.interactions.items && clinicalGuide.interactions.items.length > 0 ? (
+                  clinicalGuide.interactions.items.map((item, i) => (
+                    <div key={i} className="p-2.5 rounded-lg bg-surface-container-lowest text-body-sm">
+                      <strong className="text-on-surface font-semibold">{item.drug}:</strong>{" "}
+                      <span className="text-on-surface-variant">{item.effect}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-body-sm text-on-surface-variant italic py-1">
+                    Clinical information is not available yet.
+                  </p>
+                )}
               </div>
             </div>
           </div>

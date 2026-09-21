@@ -12,6 +12,7 @@ interface AdminDeleteConfirmModalProps {
   onClose: () => void;
   onConfirm: () => void;
   medicine: AdminMedicineItem | null;
+  isSubmitting?: boolean;
 }
 
 export default function AdminDeleteConfirmModal({
@@ -19,6 +20,7 @@ export default function AdminDeleteConfirmModal({
   onClose,
   onConfirm,
   medicine,
+  isSubmitting = false,
 }: AdminDeleteConfirmModalProps) {
   if (!isOpen || !medicine) return null;
 
@@ -65,19 +67,25 @@ export default function AdminDeleteConfirmModal({
 
         <div className="flex items-center justify-end gap-space-sm pt-space-xs">
           <button
+            disabled={isSubmitting}
             onClick={onClose}
-            className="px-space-md py-2 rounded-xl bg-surface-container text-on-surface font-label-lg text-label-lg hover:bg-surface-container-high transition-all cursor-pointer font-medium"
+            className="px-space-md py-2 rounded-xl bg-surface-container text-on-surface font-label-lg text-label-lg hover:bg-surface-container-high transition-all cursor-pointer font-medium disabled:opacity-60"
             type="button"
           >
             বাতিল (Cancel)
           </button>
           <button
+            disabled={isSubmitting}
             onClick={onConfirm}
-            className="flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-error text-on-error font-label-lg text-label-lg shadow-sm hover:opacity-90 transition-all cursor-pointer font-semibold"
+            className={`flex items-center gap-space-xs px-space-md py-2 rounded-xl bg-error text-on-error font-label-lg text-label-lg shadow-sm hover:opacity-90 transition-all cursor-pointer font-semibold ${
+              isSubmitting ? "opacity-60 cursor-not-allowed" : ""
+            }`}
             type="button"
           >
-            <span className="material-symbols-outlined text-lg">delete_forever</span>
-            <span>হ্যাঁ, মুছে ফেলুন (Delete)</span>
+            <span className={`material-symbols-outlined text-lg ${isSubmitting ? "animate-spin" : ""}`}>
+              {isSubmitting ? "progress_activity" : "delete_forever"}
+            </span>
+            <span>{isSubmitting ? "মুছে ফেলা হচ্ছে..." : "হ্যাঁ, মুছে ফেলুন (Delete)"}</span>
           </button>
         </div>
       </div>

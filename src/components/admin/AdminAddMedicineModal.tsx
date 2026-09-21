@@ -13,6 +13,7 @@ interface AdminAddMedicineModalProps {
   onClose: () => void;
   onSave: (data: Partial<AdminMedicineItem>) => void;
   editingMedicine: AdminMedicineItem | null;
+  isSubmitting?: boolean;
 }
 
 export default function AdminAddMedicineModal({
@@ -20,6 +21,7 @@ export default function AdminAddMedicineModal({
   onClose,
   onSave,
   editingMedicine,
+  isSubmitting = false,
 }: AdminAddMedicineModalProps) {
   const [tradeName, setTradeName] = useState("");
   const [genericName, setGenericName] = useState("");
@@ -60,6 +62,7 @@ export default function AdminAddMedicineModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (!tradeName || !genericName || !strength || !mrp) return;
 
     const parsedMrp = parseFloat(mrp) || 0;
@@ -307,11 +310,22 @@ export default function AdminAddMedicineModal({
             </button>
 
             <button
-              className="flex items-center gap-space-xs px-space-xl py-2.5 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg shadow-sm hover:bg-primary-container active:scale-[0.98] transition-all cursor-pointer font-semibold"
+              disabled={isSubmitting}
+              className={`flex items-center gap-space-xs px-space-xl py-2.5 rounded-xl bg-primary text-on-primary font-label-lg text-label-lg shadow-sm hover:bg-primary-container active:scale-[0.98] transition-all cursor-pointer font-semibold ${
+                isSubmitting ? "opacity-60 cursor-not-allowed" : ""
+              }`}
               type="submit"
             >
-              <span className="material-symbols-outlined text-xl">save</span>
-              <span>{editingMedicine ? "আপডেট সংরক্ষণ করুন" : "সংরক্ষণ করুন (Save Medicine)"}</span>
+              <span className={`material-symbols-outlined text-xl ${isSubmitting ? "animate-spin" : ""}`}>
+                {isSubmitting ? "progress_activity" : "save"}
+              </span>
+              <span>
+                {isSubmitting
+                  ? "সংরক্ষণ হচ্ছে..."
+                  : editingMedicine
+                  ? "আপডেট সংরক্ষণ করুন"
+                  : "সংরক্ষণ করুন (Save Medicine)"}
+              </span>
             </button>
           </div>
         </form>

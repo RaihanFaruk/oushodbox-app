@@ -5,8 +5,6 @@
  */
 
 import { useEffect } from "react";
-import { saveMedicines, getMedicines } from "@/lib/pwa/db";
-import { DEMO_DATABASE_MEDICINES } from "@/lib/mock-data";
 
 export default function PwaRegistration() {
   useEffect(() => {
@@ -40,19 +38,6 @@ export default function PwaRegistration() {
           });
       });
     }
-
-    // 2. Seed IndexedDB with initial medicines if empty
-    getMedicines().then((cached) => {
-      if (cached.length === 0) {
-        saveMedicines(DEMO_DATABASE_MEDICINES)
-          .then(() => {
-            console.log("[IndexedDB] Seeded offline medicine cache successfully.");
-          })
-          .catch((err) => {
-            console.warn("[IndexedDB] Seeding failed:", err);
-          });
-      }
-    });
   }, []);
 
   return null;

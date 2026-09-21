@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import AdminAuthGuard from "@/components/admin/AdminAuthGuard";
 import AdminPanelClient from "@/components/admin/AdminPanelClient";
 
 export const metadata: Metadata = {
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
 export default function AdminPage() {
   return (
     <div className="min-h-screen bg-surface py-space-lg px-space-md lg:px-space-xl">
-      <AdminPanelClient />
+      <AdminAuthGuard>
+        <AdminPanelClient />
+      </AdminAuthGuard>
     </div>
   );
 }

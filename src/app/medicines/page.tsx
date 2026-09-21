@@ -7,7 +7,7 @@
  * ⚠️ DEMO DATA ONLY — Fictional records for UI demonstration.
  */
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import MedicineRegistryHeader from "@/components/medicine/MedicineRegistryHeader";
@@ -20,13 +20,18 @@ import MedicineLoadingState from "@/components/medicine/MedicineLoadingState";
 import MedicinePagination from "@/components/medicine/MedicinePagination";
 import MedicineToast from "@/components/medicine/MedicineToast";
 
-import { DEMO_DATABASE_MEDICINES } from "@/lib/mock-data";
-import { saveMedicines, getMedicines } from "@/lib/pwa/db";
+import { getMedicines as getFirestoreMedicines } from "@/lib/firestore/medicines";
+import { saveMedicines, getMedicines as getCachedMedicines, clearMedicines } from "@/lib/pwa/db";
 import type { DatabaseMedicine, MedicineViewMode, MedicineSimState } from "@/types";
 
 export default function MedicineDatabasePage() {
   // ─── Interactive State ───────────────────────────────────────────────────
-  const [medicines, setMedicines] = useState<DatabaseMedicine[]>(DEMO_DATABASE_MEDICINES);
+  const [medicines, setMedicines] = useState<DatabaseMedicine[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [genericFilter, setGenericFilter] = useState("all");
   const [dosageFormFilter, setDosageFormFilter] = useState("all");
@@ -37,7 +42,7 @@ export default function MedicineDatabasePage() {
   const [simState, setSimState] = useState<MedicineSimState>("normal");
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set(["napa-extra"]));
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -50,80 +55,150 @@ export default function MedicineDatabasePage() {
     }, 2800);
   };
 
-  useEffect(() => {
-    // Offline caching & recovery via IndexedDB
-    if (typeof window !== "undefined") {
-      if (navigator.onLine) {
-        saveMedicines(DEMO_DATABASE_MEDICINES).catch((err) => {
-          console.warn("[PWA IndexedDB] Cache sync warning:", err);
-        });
-      } else {
-        getMedicines()
-          .then((cached) => {
-            if (cached && cached.length > 0) {
-              setMedicines(cached);
-            }
-          })
-          .catch((err) => {
-            console.warn("[PWA IndexedDB] Offline load warning:", err);
-          });
+  // ─── Data Loading: Firestore (Online) + IndexedDB (Offline) ─────────────
+  const loadMedicines = useCallback(async () => {
+    setIsLoading(true);
+    setIsError(false);
+    setErrorMessage(null);
+
+    const online = typeof navigator !== "undefined" ? navigator.onLine : true;
+    setIsOffline(!online);
+
+    if (online) {
+      try {
+        const firestoreMeds = await getFirestoreMedicines();
+        setMedicines(firestoreMeds);
+
+        // Sync fresh Firestore medicines to IndexedDB for offline access
+        if (firestoreMeds.length > 0) {
+          await clearMedicines();
+          await saveMedicines(firestoreMeds);
+        } else {
+          await clearMedicines();
+        }
+      } catch (err: any) {
+        console.warn("[Medicines] Firestore fetch failed, attempting offline cache:", err);
+        try {
+          const cached = await getCachedMedicines();
+          if (cached && cached.length > 0) {
+            setMedicines(cached);
+            setIsOffline(true);
+            showToast("অফলাইন মোড: সংরক্ষিত ক্যাশ থেকে ডেটা লোড হয়েছে");
+          } else {
+            setIsError(true);
+            setErrorMessage("সার্ভার বা ডেটাবেসের সাথে সংযোগ স্থাপন করা যায়নি এবং কোনো অফলাইন তথ্য সংরক্ষিত নেই।");
+          }
+        } catch {
+          setIsError(true);
+          setErrorMessage("ওষুধের তথ্য লোড করতে ব্যর্থ হয়েছে।");
+        }
+      } finally {
+        setIsLoading(false);
       }
+    } else {
+      // Browser reports offline
+      try {
+        const cached = await getCachedMedicines();
+        if (cached && cached.length > 0) {
+          setMedicines(cached);
+          showToast("অফলাইন মোড: ক্যাশড ডেটা ব্যবহৃত হচ্ছে");
+        } else {
+          setMedicines([]);
+        }
+      } catch (err) {
+        console.warn("[Medicines] Offline cache read failed:", err);
+        setMedicines([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    loadMedicines();
+
+    const handleOnline = () => {
+      setIsOffline(false);
+      loadMedicines();
+    };
+    const handleOffline = () => {
+      setIsOffline(true);
+      showToast("ইন্টারনেট সংযোগ বিচ্ছিন্ন: অফলাইন মোড সক্রিয়");
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", handleOnline);
+      window.addEventListener("offline", handleOffline);
     }
 
     return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("online", handleOnline);
+        window.removeEventListener("offline", handleOffline);
+      }
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
-  }, []);
+  }, [loadMedicines]);
 
   // ─── Filter & Sort Logic ─────────────────────────────────────────────────
   const filteredMedicines = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return medicines.filter((med) => {
-      // Search matching (Trade name, Generic name, Manufacturer)
-      if (query) {
-        const matchesTrade = med.tradeName.toLowerCase().includes(query);
-        const matchesGeneric = med.genericName.toLowerCase().includes(query);
-        const matchesManufacturer = med.manufacturer.toLowerCase().includes(query);
-        if (!matchesTrade && !matchesGeneric && !matchesManufacturer) return false;
-      }
+    return medicines
+      .filter((med) => {
+        // Search matching (Trade name, Generic name, Manufacturer)
+        if (query) {
+          const matchesTrade = (med.tradeName || "").toLowerCase().includes(query);
+          const matchesGeneric = (med.genericName || "").toLowerCase().includes(query);
+          const matchesManufacturer = (med.manufacturer || "").toLowerCase().includes(query);
+          if (!matchesTrade && !matchesGeneric && !matchesManufacturer) return false;
+        }
 
-      // Generic group filter
-      if (genericFilter !== "all") {
-        const matchesGroup =
-          med.genericGroup === genericFilter ||
-          med.genericName.toLowerCase().includes(genericFilter);
-        if (!matchesGroup) return false;
-      }
+        // Generic group filter
+        if (genericFilter !== "all") {
+          const matchesGroup =
+            med.genericGroup === genericFilter ||
+            (med.genericName || "").toLowerCase().includes(genericFilter.toLowerCase());
+          if (!matchesGroup) return false;
+        }
 
-      // Dosage form filter
-      if (dosageFormFilter !== "all") {
-        if (med.dosageForm !== dosageFormFilter) return false;
-      }
+        // Dosage form filter
+        if (dosageFormFilter !== "all") {
+          const form = (med.dosageForm || "").toLowerCase();
+          const badge = (med.dosageBadge || "").toLowerCase();
+          const filter = dosageFormFilter.toLowerCase();
+          const matchesForm = form === filter || form.includes(filter) || badge.includes(filter);
+          if (!matchesForm) return false;
+        }
 
-      // Manufacturer filter
-      if (manufacturerFilter !== "all") {
-        if (med.manufacturerKey !== manufacturerFilter) return false;
-      }
+        // Manufacturer filter
+        if (manufacturerFilter !== "all") {
+          const mfrKey = (med.manufacturerKey || "").toLowerCase();
+          const mfrName = (med.manufacturer || "").toLowerCase();
+          const filter = manufacturerFilter.toLowerCase();
+          const matchesMfr = mfrKey === filter || mfrKey.includes(filter) || mfrName.includes(filter);
+          if (!matchesMfr) return false;
+        }
 
-      return true;
-    }).sort((a, b) => {
-      if (sortBy === "alpha") {
-        return a.tradeName.localeCompare(b.tradeName);
-      }
-      if (sortBy === "price-low") {
-        return a.unitPrice - b.unitPrice;
-      }
-      if (sortBy === "price-high") {
-        return b.unitPrice - a.unitPrice;
-      }
-      if (sortBy === "discount") {
-        return b.discountPct - a.discountPct;
-      }
-      // "updated" default
-      return b.updatedTimestamp - a.updatedTimestamp;
-    });
-  }, [searchQuery, genericFilter, dosageFormFilter, manufacturerFilter, sortBy]);
+        return true;
+      })
+      .sort((a, b) => {
+        if (sortBy === "alpha") {
+          return (a.tradeName || "").localeCompare(b.tradeName || "");
+        }
+        if (sortBy === "price-low") {
+          return (a.unitPrice || 0) - (b.unitPrice || 0);
+        }
+        if (sortBy === "price-high") {
+          return (b.unitPrice || 0) - (a.unitPrice || 0);
+        }
+        if (sortBy === "discount") {
+          return (b.discountPct || 0) - (a.discountPct || 0);
+        }
+        // "updated" default
+        return (b.updatedTimestamp || 0) - (a.updatedTimestamp || 0);
+      });
+  }, [medicines, searchQuery, genericFilter, dosageFormFilter, manufacturerFilter, sortBy]);
 
   // ─── Selection Handlers ──────────────────────────────────────────────────
   const toggleSelectOne = (id: string) => {
@@ -278,9 +353,27 @@ export default function MedicineDatabasePage() {
           />
 
           {/* Interactive Results Area */}
-          {simState === "skeleton" ? (
+          {isLoading || simState === "skeleton" ? (
             <MedicineLoadingState count={6} />
-          ) : simState === "empty" || filteredMedicines.length === 0 ? (
+          ) : isError ? (
+            <MedicineEmptyState
+              onResetFilters={resetFilters}
+              isError={true}
+              errorMessage={errorMessage || undefined}
+              onRetry={loadMedicines}
+            />
+          ) : simState === "empty" ? (
+            <MedicineEmptyState
+              onResetFilters={resetFilters}
+              onQuickSearchNapa={setQuickSearchNapa}
+            />
+          ) : medicines.length === 0 ? (
+            <MedicineEmptyState
+              onResetFilters={resetFilters}
+              isDatabaseEmpty={true}
+              onRetry={loadMedicines}
+            />
+          ) : filteredMedicines.length === 0 ? (
             <MedicineEmptyState
               onResetFilters={resetFilters}
               onQuickSearchNapa={setQuickSearchNapa}
