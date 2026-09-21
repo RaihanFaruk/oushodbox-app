@@ -5,8 +5,9 @@
  * Preserved from Stitch home_dashboard medicine list.
  */
 
-import type { DemoMedicine } from "@/lib/mock-data";
+import Link from "next/link";
 import { shareToWhatsApp } from "@/lib/utils";
+import type { DatabaseMedicine } from "@/types";
 
 const dosageColorMap: Record<string, string> = {
   primary: "text-primary",
@@ -21,12 +22,54 @@ const extraBadgeBgMap: Record<string, string> = {
   schedule: "bg-amber-tint text-warning font-semibold",
 };
 
+export interface HomeMedicineItem {
+  id: string;
+  tradeName: string;
+  strength?: string;
+  extraBadge?: string;
+  extraBadgeType?: "normal" | "rx" | "schedule";
+  genericLabel?: string;
+  genericName: string;
+  manufacturer: string;
+  priceLabel?: string;
+  price: string;
+  priceUnit: string;
+  stockInfo: string;
+  stockType?: "normal" | "warning" | "error";
+  dosageForm: string;
+  dosageColor?: "primary" | "secondary" | "tertiary" | "error";
+}
+
+export function databaseMedicineToHomeItem(med: DatabaseMedicine): HomeMedicineItem {
+  const isCapsule = (med.dosageBadge || "").includes("ক্যাপসুল") || med.dosageForm === "capsule";
+  const dosageFormStr = med.isRx ? "Rx" : isCapsule ? "CAP" : "TAB";
+  const strengthStr = (med as any).strength || med.dosageBadge || "";
+
+  return {
+    id: med.id,
+    tradeName: med.tradeName,
+    strength: strengthStr,
+    extraBadge: med.discountFormatted && med.discountPct > 0 ? med.discountFormatted : undefined,
+    extraBadgeType: "normal",
+    genericLabel: "জেনেরিক:",
+    genericName: med.genericName,
+    manufacturer: med.manufacturer,
+    priceLabel: "৳",
+    price: med.unitPriceFormatted || `৳ ${med.unitPrice.toFixed(2)}`,
+    priceUnit: med.unitPriceUnit || "/ট্যাবলেট",
+    stockInfo: med.stockStatus || "ইন-স্টক",
+    stockType: med.stockStatus?.includes("ঘাটতি") ? "error" : "normal",
+    dosageForm: dosageFormStr,
+    dosageColor: med.isRx ? "error" : isCapsule ? "secondary" : "primary",
+  };
+}
+
 interface MedicineListItemProps {
-  medicine: DemoMedicine;
+  medicine: HomeMedicineItem;
 }
 
 export default function MedicineListItem({ medicine }: MedicineListItemProps) {
-  const dosageColor = dosageColorMap[medicine.dosageColor] ?? "text-primary";
+  const dosageColor = (medicine.dosageColor && dosageColorMap[medicine.dosageColor]) || "text-primary";
 
   function handleShare() {
     shareToWhatsApp(
@@ -54,9 +97,12 @@ export default function MedicineListItem({ medicine }: MedicineListItemProps) {
         {/* Medicine details */}
         <div className="flex flex-col min-w-0">
           <div className="flex flex-wrap items-center gap-space-xs">
-            <span className="font-headline-sm text-headline-sm font-bold text-on-surface">
+            <Link
+              href={`/medicines/${medicine.id}`}
+              className="font-headline-sm text-headline-sm font-bold text-on-surface hover:text-primary transition-colors"
+            >
               {medicine.tradeName}
-            </span>
+            </Link>
             <span className="px-space-xs py-0.5 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm">
               {medicine.strength}
             </span>

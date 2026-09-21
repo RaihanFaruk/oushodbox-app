@@ -56,7 +56,7 @@ export default function SearchBar({ onSearch, onCategoryChange }: SearchBarProps
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="ঔষধের নাম, জেনেরিক নাম বা ব্র্যান্ড নাম লিখুন... (যেমন: Napa Extra, Seclo, Ciprocin, Monas)"
+            placeholder="ঔষধের নাম, জেনেরিক নাম বা প্রস্তুতকারকের নাম অনুসন্ধান করুন..."
             aria-label="ঔষধ অনুসন্ধান"
             className="w-full bg-transparent py-3.5 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/70 focus:outline-none"
           />

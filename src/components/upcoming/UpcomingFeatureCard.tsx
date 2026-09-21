@@ -100,7 +100,7 @@ export default function UpcomingFeatureCard({
           {feature.previewType === "stock_bar" && (
             <div className="p-space-sm rounded-lg bg-surface-container-lowest shadow-sm border border-[var(--color-border)] flex flex-col gap-1.5">
               <div className="flex justify-between font-label-sm text-label-sm text-on-surface-variant">
-                <span>{feature.previewData?.drugName || "Napa Extra 500mg"}</span>
+                <span>{feature.previewData?.drugName || "নমুনা ঔষধ ফরম্যুলেশন"}</span>
                 <span className="text-error font-semibold">
                   {feature.previewData?.remainingText || "মাত্র ১৮ পাতা অবশিষ্ট"}
                 </span>
@@ -118,7 +118,7 @@ export default function UpcomingFeatureCard({
           {feature.previewType === "expiry_badge" && (
             <div className="p-space-sm rounded-lg bg-surface-container-lowest shadow-sm border border-[var(--color-border)] flex items-center justify-between font-label-sm text-label-sm">
               <span className="text-on-surface-variant">
-                {feature.previewData?.drugName || "Seclo 20mg Cap"}
+                {feature.previewData?.drugName || "নমুনা ক্যাপসুল"}
               </span>
               <span className="px-2 py-0.5 rounded bg-error-container text-on-error-container font-semibold">
                 {feature.previewData?.daysLeft || "৫৮ দিন বাকি"}

@@ -9,7 +9,7 @@
  *  - Mobile: Full-width scrollable content + fixed bottom nav
  */
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 
 // Layout
@@ -21,22 +21,56 @@ import GreetingBanner from "@/components/home/GreetingBanner";
 import SearchBar from "@/components/home/SearchBar";
 import QuickActionCard from "@/components/home/QuickActionCard";
 import StatCard from "@/components/home/StatCard";
-import MedicineListItem from "@/components/home/MedicineListItem";
+import MedicineListItem, {
+  databaseMedicineToHomeItem,
+  type HomeMedicineItem,
+} from "@/components/home/MedicineListItem";
 import DgdaNoticePanel from "@/components/home/DgdaNoticePanel";
 import RecentActivityPanel from "@/components/home/RecentActivityPanel";
 import PwaInstallPanel from "@/components/home/PwaInstallPanel";
 
 // Data
 import {
-  DEMO_MEDICINES,
   DEMO_STATS,
   QUICK_ACTIONS,
 } from "@/lib/mock-data";
+import { getMedicines as getFirestoreMedicines } from "@/lib/firestore/medicines";
+import { getMedicines as getCachedMedicines } from "@/lib/pwa/db";
 
 export default function HomePage() {
   const [medicineListOpacity, setMedicineListOpacity] = useState(1);
   const [notifCount] = useState(3);
+  const [medicines, setMedicines] = useState<HomeMedicineItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const medicineContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    async function loadHomeMedicines() {
+      setIsLoading(true);
+      try {
+        const docs = await getFirestoreMedicines();
+        if (isMounted) {
+          setMedicines(docs.slice(0, 6).map(databaseMedicineToHomeItem));
+        }
+      } catch {
+        try {
+          const cached = await getCachedMedicines();
+          if (isMounted) {
+            setMedicines(cached.slice(0, 6).map(databaseMedicineToHomeItem));
+          }
+        } catch {
+          if (isMounted) setMedicines([]);
+        }
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+    loadHomeMedicines();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Search feedback: flash opacity like the original Stitch JS
   function handleSearch(query: string) {
@@ -139,9 +173,6 @@ export default function HomePage() {
                   <h2 className="font-headline-sm text-headline-sm font-semibold text-on-surface">
                     সাম্প্রতিক ঔষধ রেকর্ড
                   </h2>
-                  <span className="px-space-xs py-0.5 rounded-full bg-primary-fixed text-on-primary-fixed-variant font-label-sm text-label-sm font-semibold ml-1">
-                    DEMO
-                  </span>
                 </div>
                 <Link
                   href="/medicines"
@@ -161,19 +192,39 @@ export default function HomePage() {
                 aria-live="polite"
                 aria-label="ঔষধ তালিকা"
               >
-                {DEMO_MEDICINES.map((medicine) => (
-                  <MedicineListItem key={medicine.id} medicine={medicine} />
-                ))}
+                {isLoading ? (
+                  <div className="p-8 text-center text-on-surface-variant font-body-sm flex flex-col items-center justify-center gap-2">
+                    <span className="material-symbols-outlined animate-spin text-2xl text-primary">progress_activity</span>
+                    <span>ঔষধ তালিকা লোড হচ্ছে...</span>
+                  </div>
+                ) : medicines.length > 0 ? (
+                  medicines.map((medicine) => (
+                    <MedicineListItem key={medicine.id} medicine={medicine} />
+                  ))
+                ) : (
+                  <div className="p-8 text-center rounded-xl bg-surface-container-lowest border border-dashed border-[var(--color-border)]">
+                    <span className="material-symbols-outlined text-3xl text-outline mb-2">medication</span>
+                    <p className="font-headline-sm text-on-surface font-semibold">কোনো ঔষধ পাওয়া যায়নি</p>
+                    <p className="font-body-sm text-on-surface-variant mt-1">ডেটাবেসে কোনো রেকর্ড নেই। এডমিন প্যানেল থেকে ঔষধ যোগ করুন।</p>
+                    <Link
+                      href="/admin"
+                      className="mt-4 inline-flex items-center gap-1 px-4 py-2 rounded-lg bg-primary text-on-primary text-label-sm font-semibold hover:opacity-90 transition-opacity"
+                    >
+                      <span className="material-symbols-outlined text-base">add</span>
+                      এডমিন প্যানেলে যান
+                    </Link>
+                  </div>
+                )}
               </div>
 
-              {/* Load more */}
-              <button
-                type="button"
+              {/* Load more / All medicines */}
+              <Link
+                href="/medicines"
                 className="w-full py-3 rounded-xl border border-[var(--color-border)] text-on-surface-variant font-label-md text-label-md hover:bg-surface-container hover:text-on-surface transition-all flex items-center justify-center gap-space-xs"
               >
-                <span className="material-symbols-outlined text-base" aria-hidden="true">expand_more</span>
-                আরও ঔষধ দেখুন
-              </button>
+                <span className="material-symbols-outlined text-base" aria-hidden="true">database</span>
+                সকল ঔষধ ডাটাবেস দেখুন
+              </Link>
             </section>
 
             {/* RIGHT 4 cols: Activity + Notices + PWA */}
@@ -189,8 +240,7 @@ export default function HomePage() {
         <footer className="hidden lg:block w-full bg-surface-container-lowest py-space-md px-margin border-t border-[var(--color-border)]">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-space-sm font-label-sm text-label-sm text-on-surface-variant">
             <p>
-              ঔষধBox v1.2.0 — ফার্মাসিউটিক্যাল ম্যানেজমেন্ট সিস্টেম — তথ্যসূত্র: DGDA নিবন্ধিত —
-              সকল তথ্য ডেমো/নমুনা মাত্র
+              ঔষধBox v1.2.0 — ফার্মাসিউটিক্যাল ম্যানেজমেন্ট সিস্টেম — তথ্যসূত্র: DGDA নিবন্ধিত
             </p>
             <div className="flex items-center gap-space-md">
               <span className="text-primary font-medium">বাংলাদেশ: ঢাকা-১২০৮</span>

@@ -134,6 +134,34 @@ export async function deleteCachedMedicine(id: string): Promise<void> {
   });
 }
 
+const DEMO_CACHE_PURGED_FLAG = "demo_cache_purged_v2";
+
+/**
+ * Safe one-time cache cleanup migration:
+ * Purges legacy hardcoded demo medicines from IndexedDB without touching
+ * sync queues or other app metadata. Once purged, flag is recorded so subsequent
+ * legitimate Firestore cache entries are never cleared unexpectedly.
+ */
+export async function clearOldDemoCacheIfNeeded(): Promise<boolean> {
+  const db = await openDB();
+  if (!db) return false;
+
+  try {
+    const alreadyPurged = await getMetadata<boolean>(DEMO_CACHE_PURGED_FLAG);
+    if (alreadyPurged) {
+      return false;
+    }
+
+    await clearMedicines();
+    await saveMetadata(DEMO_CACHE_PURGED_FLAG, true);
+    console.log("[IndexedDB] One-time demo cache cleanup completed successfully.");
+    return true;
+  } catch (err) {
+    console.warn("[IndexedDB] Error during one-time demo cache purge:", err);
+    return false;
+  }
+}
+
 // ─── Metadata Operations ───────────────────────────────────────────────────
 
 export async function saveMetadata(key: string, value: unknown): Promise<void> {

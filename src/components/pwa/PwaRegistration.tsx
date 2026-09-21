@@ -5,10 +5,16 @@
  */
 
 import { useEffect } from "react";
+import { clearOldDemoCacheIfNeeded } from "@/lib/pwa/db";
 
 export default function PwaRegistration() {
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    // 0. Safe one-time purge of legacy demo cache from IndexedDB
+    clearOldDemoCacheIfNeeded().catch((err) => {
+      console.warn("[PWA] Demo cache cleanup warning:", err);
+    });
 
     // 1. Register Service Worker
     if ("serviceWorker" in navigator) {
