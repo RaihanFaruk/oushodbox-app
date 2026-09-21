@@ -8,7 +8,6 @@
 import { useState, useMemo, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
-  DEMO_ADMIN_MEDICINES,
   DEMO_ADMIN_AUDIT_LOGS,
 } from "@/lib/mock-data";
 import {
@@ -19,6 +18,7 @@ import {
   toAdminMedicineItem,
 } from "@/lib/firestore/medicines";
 import { logout, subscribeToAuthChanges } from "@/lib/auth";
+import { deleteCachedMedicine } from "@/lib/pwa/db";
 import type {
   AdminMedicineItem,
   AdminAuditLogItem,
@@ -37,8 +37,8 @@ export default function AdminPanelClient() {
   const router = useRouter();
   const [, startTransition] = useTransition();
 
-  // Core Data States
-  const [medicines, setMedicines] = useState<AdminMedicineItem[]>(DEMO_ADMIN_MEDICINES);
+  // Core Data States — Initialized Empty, Populated Exclusively from Firestore
+  const [medicines, setMedicines] = useState<AdminMedicineItem[]>([]);
   const [auditLogs, setAuditLogs] = useState<AdminAuditLogItem[]>(DEMO_ADMIN_AUDIT_LOGS);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,25 +78,22 @@ export default function AdminPanelClient() {
     const unsubscribe = subscribeToAuthChanges((user) => {
       if (user) {
         setUserEmail(user.email || null);
-      } else {
-        router.replace("/admin/login");
       }
     });
 
     return () => unsubscribe();
-  }, [router]);
+  }, []);
 
   const handleLogout = async () => {
     try {
       await logout();
-      router.replace("/admin/login");
     } catch (err) {
       console.error("[AdminPanel] Logout error:", err);
       showToast("লগআউট ব্যর্থ হয়েছে।");
     }
   };
 
-  // Load medicines from Firestore on mount with graceful fallback to mock data
+  // Load medicines from Firestore on mount
   useEffect(() => {
     let isMounted = true;
     async function loadData() {
@@ -107,14 +104,13 @@ export default function AdminPanelClient() {
           if (remoteMeds && remoteMeds.length > 0) {
             setMedicines(remoteMeds.map(toAdminMedicineItem));
           } else {
-            // Firestore empty -> gracefully fallback to DEMO_ADMIN_MEDICINES
-            setMedicines(DEMO_ADMIN_MEDICINES);
+            setMedicines([]);
           }
         }
       } catch (err) {
-        console.warn("[AdminPanel] Failed to fetch Firestore medicines, using fallback mock data:", err);
+        console.warn("[AdminPanel] Failed to fetch Firestore medicines:", err);
         if (isMounted) {
-          setMedicines(DEMO_ADMIN_MEDICINES);
+          setMedicines([]);
         }
       } finally {
         if (isMounted) {
@@ -380,6 +376,7 @@ export default function AdminPanelClient() {
 
     try {
       await deleteMedicine(target.id);
+      await deleteCachedMedicine(target.id);
 
       setMedicines((prev) => prev.filter((m) => m.id !== target.id));
       setSelectedIds((prev) => {
@@ -450,7 +447,7 @@ export default function AdminPanelClient() {
 
       {/* 1. Admin Hero Banner */}
       <AdminHeroBanner
-        totalDrugs={medicines.length + 3832}
+        totalDrugs={medicines.length}
         pendingCount={pendingCount}
         registeredUsers={128}
         systemHealth={100}
@@ -507,7 +504,7 @@ export default function AdminPanelClient() {
             onEdit={handleOpenEditModal}
             onDelete={handleOpenDeleteModal}
             currentPage={currentPage}
-            totalCount={medicines.length + 3832}
+            totalCount={medicines.length}
             onPageChange={setCurrentPage}
           />
 

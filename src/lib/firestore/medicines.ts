@@ -21,7 +21,6 @@ import {
   QueryDocumentSnapshot,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { getMedicineMonograph } from "@/lib/mock-data";
 import type { DatabaseMedicine, AdminMedicineItem, MedicineMonograph } from "@/types";
 
 export const MEDICINES_COLLECTION = "medicines";
@@ -85,18 +84,7 @@ export function toAdminMedicineItem(doc: any): AdminMedicineItem {
  * Convert any DatabaseMedicine (including records from Firestore) into a complete clinical monograph
  */
 export function buildMonographFromMedicine(med: DatabaseMedicine): MedicineMonograph {
-  // Predefined rich monographs (e.g. napa-extra, seclo-20)
-  const predefined = getMedicineMonograph(med.id);
-  if (predefined) {
-    return {
-      ...predefined,
-      ...med,
-      unitPriceFormatted: med.unitPriceFormatted || predefined.unitPriceFormatted,
-      boxPriceFormatted: med.boxPriceFormatted || predefined.boxPriceFormatted,
-    };
-  }
-
-  // Custom or newly created Firestore medicine - STRICTLY DISPLAY ONLY VERIFIED STORED FIELDS
+  // Real Firestore medicine monograph - STRICTLY DISPLAY ONLY VERIFIED STORED FIELDS
   const anyMed = med as any;
   const unitPrice = Number(med.unitPrice || anyMed.mrp || 0);
   const docClinical = anyMed.clinicalGuide;

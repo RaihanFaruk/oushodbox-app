@@ -117,6 +117,23 @@ export async function clearMedicines(): Promise<void> {
   });
 }
 
+export async function deleteCachedMedicine(id: string): Promise<void> {
+  const db = await openDB();
+  if (!db) return;
+
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(STORES.MEDICINES, "readwrite");
+      const store = tx.objectStore(STORES.MEDICINES);
+      store.delete(id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => resolve();
+    } catch {
+      resolve();
+    }
+  });
+}
+
 // ─── Metadata Operations ───────────────────────────────────────────────────
 
 export async function saveMetadata(key: string, value: unknown): Promise<void> {

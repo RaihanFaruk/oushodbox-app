@@ -5,6 +5,8 @@
 
 import {
   signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
   type User,
@@ -14,11 +16,30 @@ import { auth } from "@/lib/firebase";
 
 export type { User, Unsubscribe };
 
+export const ADMIN_EMAIL = "mehj49966@gmail.com";
+
+/**
+ * Check if the user matches the single authorized administrator account.
+ */
+export function isAuthorizedAdmin(user: User | null): boolean {
+  return Boolean(user && user.email === ADMIN_EMAIL);
+}
+
+/**
+ * Sign in with Google (Passwordless 1-Click for authorized admin account).
+ */
+export async function loginWithGoogle(): Promise<User> {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  const credential = await signInWithPopup(auth, provider);
+  return credential.user;
+}
+
 /**
  * Sign in with email and password.
- * Passwords are never stored in client storage.
+ * Passwords are never stored in client storage or source code.
  */
-export async function loginWithEmail(email: string, password: string):Promise<User> {
+export async function loginWithEmail(email: string, password: string): Promise<User> {
   const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
   return userCredential.user;
 }
