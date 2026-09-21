@@ -432,13 +432,22 @@ export default function HomePage() {
                     OushodBox একটি ব্যক্তিগত ওয়ার্কস্পেস। আপনার সংরক্ষিত ওষুধ ও মূল্য তালিকা দেখতে অ্যাডমিন অ্যাকাউন্টে সাইন ইন করুন।
                   </p>
                 </div>
-                <Link
-                  href="/admin/login"
-                  className="mt-2 inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-primary-dark transition-all shadow-xs"
-                >
-                  <span className="material-symbols-outlined text-base">login</span>
-                  <span>অ্যাডমিন লগইন</span>
-                </Link>
+                <div className="flex items-center gap-2.5 mt-2 flex-wrap justify-center">
+                  <Link
+                    href="/public"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-on-surface text-sm font-semibold border border-[var(--color-border)] transition-all"
+                  >
+                    <span className="material-symbols-outlined text-base">list_alt</span>
+                    <span>পাবলিক মূল্য তালিকা</span>
+                  </Link>
+                  <Link
+                    href="/admin/login"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-primary-dark transition-all shadow-xs"
+                  >
+                    <span className="material-symbols-outlined text-base">login</span>
+                    <span>অ্যাডমিন লগইন</span>
+                  </Link>
+                </div>
               </div>
             ) : totalCount === 0 ? (
               /* Empty State when Database has Zero Medicines */
