@@ -22,6 +22,7 @@ import MedicineToast from "@/components/medicine/MedicineToast";
 
 import { getMedicines as getFirestoreMedicines } from "@/lib/firestore/medicines";
 import { saveMedicines, getMedicines as getCachedMedicines, clearMedicines } from "@/lib/pwa/db";
+import { DEMO_DATABASE_MEDICINES } from "@/lib/mock-data";
 import type { DatabaseMedicine, MedicineViewMode, MedicineSimState } from "@/types";
 
 export default function MedicineDatabasePage() {
@@ -77,7 +78,7 @@ export default function MedicineDatabasePage() {
           await clearMedicines();
         }
       } catch (err: any) {
-        console.warn("[Medicines] Firestore fetch failed, attempting offline cache:", err);
+        console.warn("[Medicines] Firestore fetch failed, attempting offline cache or graceful fallback:", err);
         try {
           const cached = await getCachedMedicines();
           if (cached && cached.length > 0) {
@@ -85,12 +86,13 @@ export default function MedicineDatabasePage() {
             setIsOffline(true);
             showToast("অফলাইন মোড: সংরক্ষিত ক্যাশ থেকে ডেটা লোড হয়েছে");
           } else {
-            setIsError(true);
-            setErrorMessage("সার্ভার বা ডেটাবেসের সাথে সংযোগ স্থাপন করা যায়নি এবং কোনো অফলাইন তথ্য সংরক্ষিত নেই।");
+            // Graceful fallback to demo medicines ONLY when Firestore is unavailable
+            setMedicines(DEMO_DATABASE_MEDICINES);
+            showToast("অফলাইন ব্যাকআপ ডেটা প্রদর্শিত হচ্ছে");
           }
         } catch {
-          setIsError(true);
-          setErrorMessage("ওষুধের তথ্য লোড করতে ব্যর্থ হয়েছে।");
+          // Graceful fallback on storage error
+          setMedicines(DEMO_DATABASE_MEDICINES);
         }
       } finally {
         setIsLoading(false);
@@ -103,11 +105,13 @@ export default function MedicineDatabasePage() {
           setMedicines(cached);
           showToast("অফলাইন মোড: ক্যাশড ডেটা ব্যবহৃত হচ্ছে");
         } else {
-          setMedicines([]);
+          // Graceful fallback to demo medicines when offline without prior cache
+          setMedicines(DEMO_DATABASE_MEDICINES);
+          showToast("অফলাইন ব্যাকআপ ডেটা প্রদর্শিত হচ্ছে");
         }
       } catch (err) {
-        console.warn("[Medicines] Offline cache read failed:", err);
-        setMedicines([]);
+        console.warn("[Medicines] Offline cache read failed, using graceful fallback:", err);
+        setMedicines(DEMO_DATABASE_MEDICINES);
       } finally {
         setIsLoading(false);
       }
