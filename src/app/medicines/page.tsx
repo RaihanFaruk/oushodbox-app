@@ -100,8 +100,8 @@ export default function MedicineDatabasePage() {
       } finally {
         setIsLoading(false);
       }
-    } else {
-      // Offline or unauthenticated — try offline cache
+    } else if (isAuthAdmin) {
+      // Offline authenticated admin session: allow viewing cached medicines
       try {
         const cached = await getCachedMedicines();
         if (cached && cached.length > 0) {
@@ -116,6 +116,10 @@ export default function MedicineDatabasePage() {
       } finally {
         setIsLoading(false);
       }
+    } else {
+      // Unauthenticated session: strictly block cached medicine access
+      setMedicines([]);
+      setIsLoading(false);
     }
   }, []);
 

@@ -14,6 +14,8 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
+import { clearMedicines } from "@/lib/pwa/db";
+
 export type { User, Unsubscribe };
 
 export const ADMIN_EMAIL = "mehj49966@gmail.com";
@@ -45,10 +47,13 @@ export async function loginWithEmail(email: string, password: string): Promise<U
 }
 
 /**
- * Sign out current user.
+ * Sign out current user. Clears local offline cache so no sensitive data remains.
  */
 export async function logout(): Promise<void> {
   await signOut(auth);
+  if (typeof window !== "undefined") {
+    clearMedicines().catch(() => {});
+  }
 }
 
 /**

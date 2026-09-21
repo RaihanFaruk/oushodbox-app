@@ -64,19 +64,9 @@ export default function MedicineDetailContainer({ id }: MedicineDetailContainerP
           setIsLoading(false);
         }
       } else {
-        // Not authenticated — check offline cache in case previously synced
-        try {
-          const cached = await getCachedMedicines();
-          const match = cached.find((m) => m.id === id);
-          if (match) {
-            setMonograph(buildMonographFromMedicine(match));
-            setNotFound(false);
-          }
-        } catch {
-          // ignore cache error
-        } finally {
-          setIsLoading(false);
-        }
+        // Not authenticated — strictly block cached medicine access for signed-out sessions
+        setMonograph(null);
+        setIsLoading(false);
       }
     });
 

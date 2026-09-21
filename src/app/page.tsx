@@ -90,17 +90,9 @@ export default function HomePage() {
       if (isAuthorizedAdmin(user)) {
         fetchMedicines();
       } else {
-        // Try reading cached data
-        getCachedMedicines()
-          .then((cached) => {
-            if (cached && cached.length > 0) {
-              setMedicines(cached);
-            } else {
-              setMedicines([]);
-            }
-          })
-          .catch(() => setMedicines([]))
-          .finally(() => setIsLoading(false));
+        // Unauthenticated — strictly block cached medicine access
+        setMedicines([]);
+        setIsLoading(false);
       }
     });
     return () => unsubscribe();
