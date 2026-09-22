@@ -16,6 +16,7 @@ interface AdminAddMedicineModalProps {
   editingMedicine: AdminMedicineItem | null;
   isSubmitting?: boolean;
   existingCompanies?: string[];
+  existingGenerics?: string[];
 }
 
 export default function AdminAddMedicineModal({
@@ -25,10 +26,13 @@ export default function AdminAddMedicineModal({
   editingMedicine,
   isSubmitting = false,
   existingCompanies = [],
+  existingGenerics = [],
 }: AdminAddMedicineModalProps) {
   const [itemType, setItemType] = useState<ItemType>("medicine");
   const [tradeName, setTradeName] = useState("");
   const [genericName, setGenericName] = useState("");
+  const [showGenericSuggestions, setShowGenericSuggestions] = useState(false);
+  const [fetchedGenerics, setFetchedGenerics] = useState<string[]>([]);
   const [manufacturer, setManufacturer] = useState("");
   const [showCompanySuggestions, setShowCompanySuggestions] = useState(false);
   const [fetchedCompanies, setFetchedCompanies] = useState<string[]>([]);
@@ -37,28 +41,48 @@ export default function AdminAddMedicineModal({
   const [mrp, setMrp] = useState("");
   const [discountPct, setDiscountPct] = useState("0");
 
-  // Load companies if not passed as prop
+  // Load companies and generics if not passed as props
   useEffect(() => {
-    if (!existingCompanies || existingCompanies.length === 0) {
+    const needCompanies = !existingCompanies || existingCompanies.length === 0;
+    const needGenerics = !existingGenerics || existingGenerics.length === 0;
+
+    if (needCompanies || needGenerics) {
       getMedicines()
         .then((meds) => {
-          const comps = Array.from(
-            new Set(
-              meds
-                .map((m) => m.manufacturer?.trim())
-                .filter((c): c is string => Boolean(c && c !== "অনির্ধারিত"))
-            )
-          ).sort((a, b) => a.localeCompare(b));
-          setFetchedCompanies(comps);
+          if (needCompanies) {
+            const comps = Array.from(
+              new Set(
+                meds
+                  .map((m) => m.manufacturer?.trim())
+                  .filter((c): c is string => Boolean(c && c !== "অনির্ধারিত"))
+              )
+            ).sort((a, b) => a.localeCompare(b));
+            setFetchedCompanies(comps);
+          }
+          if (needGenerics) {
+            const gens = Array.from(
+              new Set(
+                meds
+                  .map((m) => m.genericName?.trim())
+                  .filter((g): g is string => Boolean(g && g !== "জেনেরিক তথ্য নেই"))
+              )
+            ).sort((a, b) => a.localeCompare(b));
+            setFetchedGenerics(gens);
+          }
         })
         .catch(() => {});
     }
-  }, [existingCompanies]);
+  }, [existingCompanies, existingGenerics]);
 
   const availableCompanies =
     existingCompanies && existingCompanies.length > 0
       ? existingCompanies
       : fetchedCompanies;
+
+  const availableGenerics =
+    existingGenerics && existingGenerics.length > 0
+      ? existingGenerics
+      : fetchedGenerics;
 
   const filteredCompanySuggestions = useMemo(() => {
     const q = manufacturer.trim().toLowerCase();
@@ -67,6 +91,14 @@ export default function AdminAddMedicineModal({
       .filter((c) => c.toLowerCase().includes(q))
       .slice(0, 8);
   }, [manufacturer, availableCompanies]);
+
+  const filteredGenericSuggestions = useMemo(() => {
+    const q = genericName.trim().toLowerCase();
+    if (!q) return availableGenerics.slice(0, 8);
+    return availableGenerics
+      .filter((g) => g.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [genericName, availableGenerics]);
 
   // Populate fields when editing
   useEffect(() => {
@@ -240,7 +272,7 @@ export default function AdminAddMedicineModal({
               />
             </div>
 
-            <div className="flex flex-col gap-space-xs">
+            <div className="flex flex-col gap-space-xs relative">
               <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
                 <span>{isOther ? "জেনেরিক / উপাদান (ঐচ্ছিক)" : "জেনেরিক নাম (Generic Name) *"}</span>
                 {isOther ? (
@@ -249,14 +281,44 @@ export default function AdminAddMedicineModal({
                   <span className="text-tertiary font-label-sm text-label-sm">বাধ্যতামূলক</span>
                 )}
               </label>
-              <input
-                value={genericName}
-                onChange={(e) => setGenericName(e.target.value)}
-                className="px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
-                placeholder={isOther ? "প্রযোজ্য হলে লিখুন..." : "যেমন: Paracetamol 1000mg"}
-                required={!isOther}
-                type="text"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={genericName}
+                  onChange={(e) => {
+                    setGenericName(e.target.value);
+                    setShowGenericSuggestions(true);
+                  }}
+                  onFocus={() => setShowGenericSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowGenericSuggestions(false), 200)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setShowGenericSuggestions(false);
+                    }
+                  }}
+                  placeholder={isOther ? "প্রযোজ্য হলে লিখুন..." : "যেমন: Paracetamol, Omeprazole, Ciprofloxacin..."}
+                  className="w-full px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
+                  required={!isOther}
+                />
+                {showGenericSuggestions && filteredGenericSuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-surface-container-lowest border border-[var(--color-border)] rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto py-1">
+                    {filteredGenericSuggestions.map((gen, idx) => (
+                      <button
+                        key={`generic-suggest-${gen}-${idx}`}
+                        type="button"
+                        onMouseDown={() => {
+                          setGenericName(gen);
+                          setShowGenericSuggestions(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-surface-container-low text-on-surface flex items-center justify-between transition-colors cursor-pointer"
+                      >
+                        <span className="font-medium">{gen}</span>
+                        <span className="text-[10px] text-on-surface-variant">পূর্বে ব্যবহৃত</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -180,6 +180,18 @@ export default function AdminPanelClient() {
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [medicines]);
 
+  // Derive dynamic generic list from actual stored medicines
+  const genericOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const m of medicines) {
+      const gen = m.genericName?.trim();
+      if (gen && gen !== "জেনেরিক তথ্য নেই") {
+        set.add(gen);
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [medicines]);
+
   // Statistics derived
   const pendingCount = useMemo(
     () => medicines.filter((m) => m.status === "pending").length,
@@ -554,6 +566,7 @@ export default function AdminPanelClient() {
         editingMedicine={editingMedicine}
         isSubmitting={isSubmitting}
         existingCompanies={companyOptions}
+        existingGenerics={genericOptions}
       />
 
       {/* Delete Confirmation Modal */}

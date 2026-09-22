@@ -155,6 +155,17 @@ export default function HomePage() {
   }, [medicines]);
   const uniqueCompanies = companyList.length;
 
+  const genericList = useMemo(() => {
+    const set = new Set<string>();
+    for (const m of medicines) {
+      const gen = m.genericName?.trim();
+      if (gen && gen !== "জেনেরিক তথ্য নেই") {
+        set.add(gen);
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [medicines]);
+
   // Single-tap WhatsApp share
   const handleWhatsAppShare = (med: DatabaseMedicine) => {
     const strengthStr = (med as any).strength || med.dosageBadge || "";
@@ -692,6 +703,7 @@ export default function HomePage() {
           editingMedicine={null}
           isSubmitting={isSubmitting}
           existingCompanies={companyList}
+          existingGenerics={genericList}
         />
       )}
 
