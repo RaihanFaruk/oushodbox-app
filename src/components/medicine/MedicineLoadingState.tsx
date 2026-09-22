@@ -8,7 +8,7 @@ export default function MedicineLoadingState({ count = 6 }: { count?: number }) 
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-space-lg w-full">
       {Array.from({ length: count }).map((_, i) => (
         <div
-          key={i}
+          key={`loading-skeleton-${i}`}
           className="p-space-lg rounded-xl bg-surface-container-lowest animate-pulse flex flex-col gap-4 shadow-sm"
         >
           <div className="flex justify-between items-start">

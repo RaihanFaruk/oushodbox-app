@@ -52,7 +52,7 @@ export default function Sidebar() {
 
       {/* Primary nav */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1 overflow-y-auto" aria-label="Primary navigation">
-        {navItems.map((item) => {
+        {navItems.map((item, idx) => {
           const isActive =
             item.href === "/"
               ? pathname === "/"
@@ -60,7 +60,7 @@ export default function Sidebar() {
 
           return (
             <Link
-              key={item.href}
+              key={`sidebar-nav-${item.href}-${idx}`}
               href={item.href}
               aria-current={isActive ? "page" : undefined}
               className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${

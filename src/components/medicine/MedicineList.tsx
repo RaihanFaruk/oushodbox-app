@@ -35,9 +35,9 @@ export default function MedicineList({
   if (viewMode === "grid") {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-space-lg w-full">
-        {medicines.map((med) => (
+        {medicines.map((med, idx) => (
           <MedicineCard
-            key={med.id}
+            key={med.id ? `${med.id}-${idx}` : `med-card-${idx}`}
             medicine={med}
             isSelected={selectedIds.has(med.id)}
             onToggleSelect={onToggleSelect}
@@ -80,7 +80,7 @@ export default function MedicineList({
 
             return (
               <tr
-                key={med.id}
+                key={med.id ? `${med.id}-${idx}` : `med-row-${idx}`}
                 className={`transition-colors ${
                   isRowAlt
                     ? "bg-surface-container-low/30 hover:bg-surface-container-low/60"

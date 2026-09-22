@@ -36,11 +36,11 @@ export default function MobileBottomNav() {
       className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface/90 backdrop-blur-xl z-50 px-3 flex items-center justify-around safe-bottom border-t border-[var(--color-border)] shadow-sm"
       aria-label="Mobile navigation"
     >
-      {navItems.map((item) => {
+      {navItems.map((item, idx) => {
         const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
         return (
           <Link
-            key={item.href}
+            key={`mobile-nav-${item.href}-${idx}`}
             href={item.href}
             aria-current={isActive ? "page" : undefined}
             className={`flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[44px] transition-colors ${
