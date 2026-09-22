@@ -18,15 +18,8 @@ import { clearMedicines } from "@/lib/pwa/db";
 
 export type { User, Unsubscribe };
 
-export { ADMIN_EMAIL, isAdminEmail } from "@/lib/auth/admin";
-import { ADMIN_EMAIL, isAdminEmail } from "@/lib/auth/admin";
-
-/**
- * Check if the user matches the single authorized administrator account.
- */
-export function isAuthorizedAdmin(user: User | null): boolean {
-  return Boolean(user && isAdminEmail(user.email));
-}
+export { ADMIN_EMAIL, isAdminEmail, isAuthorizedAdmin } from "@/lib/auth/admin";
+import { ADMIN_EMAIL, isAdminEmail, isAuthorizedAdmin } from "@/lib/auth/admin";
 
 /**
  * Sign in with Google (Passwordless 1-Click for authorized admin account).

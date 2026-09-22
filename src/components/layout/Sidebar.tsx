@@ -5,21 +5,33 @@
  * Preserved from Stitch home_dashboard design.
  */
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ADMIN_EMAIL } from "@/lib/auth/admin";
+import { ADMIN_EMAIL, isAuthorizedAdmin } from "@/lib/auth/admin";
+import { subscribeToAuthChanges } from "@/lib/auth";
 import { t } from "@/lib/i18n";
 
-const navItems = [
+const allNavItems = [
   { href: "/", icon: "home", labelBn: "হোম ড্যাশবোর্ড" },
   { href: "/medicines", icon: "medication", labelBn: "ঔষধ ডেটাবেজ" },
   { href: "/whatsapp-share", icon: "share", labelBn: "হোয়াটসঅ্যাপ শেয়ার" },
-  { href: "/admin", icon: "admin_panel_settings", labelBn: "অ্যাডমিন প্যানেল" },
+  { href: "/admin", icon: "admin_panel_settings", labelBn: "অ্যাডমিন প্যানেল", adminOnly: true },
   { href: "/upcoming", icon: "offline_pin", labelBn: "অফলাইন ও PWA" },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [isAuthAdmin, setIsAuthAdmin] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthChanges((user) => {
+      setIsAuthAdmin(isAuthorizedAdmin(user));
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const navItems = allNavItems.filter((item) => !item.adminOnly || isAuthAdmin);
 
   return (
     <aside className="hidden lg:flex w-[250px] shrink-0 flex-col bg-surface border-r border-[var(--color-border)] min-h-screen sticky top-0 z-30">
@@ -68,17 +80,27 @@ export default function Sidebar() {
 
       {/* Bottom workspace status */}
       <div className="p-3 border-t border-[var(--color-border)]">
-        <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-surface-container-low border border-[var(--color-border)]">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-          <div className="flex flex-col min-w-0">
-            <span className="text-[11px] font-semibold text-on-surface truncate">
-              {ADMIN_EMAIL}
-            </span>
-            <span className="text-[10px] text-on-surface-variant">
-              {t("admin.privateWorkspaceBadge")}
-            </span>
+        {isAuthAdmin ? (
+          <div className="flex items-center gap-2.5 p-2.5 rounded-xl bg-surface-container-low border border-[var(--color-border)]">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+            <div className="flex flex-col min-w-0">
+              <span className="text-[11px] font-semibold text-on-surface truncate">
+                {ADMIN_EMAIL}
+              </span>
+              <span className="text-[10px] text-on-surface-variant">
+                {t("admin.privateWorkspaceBadge")}
+              </span>
+            </div>
           </div>
-        </div>
+        ) : (
+          <Link
+            href="/admin/login"
+            className="flex items-center gap-2.5 p-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container border border-[var(--color-border)] text-on-surface-variant hover:text-on-surface transition-colors"
+          >
+            <span className="material-symbols-outlined text-base">login</span>
+            <span className="text-xs font-semibold">{t("admin.adminLogin")}</span>
+          </Link>
+        )}
       </div>
     </aside>
   );

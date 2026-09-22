@@ -128,6 +128,7 @@ export const bn = {
     dashboardSubtitle: "সিস্টেম ডেটাবেস, ড্রাগ ক্যাটালগ ও মূল্য নিয়ন্ত্রণ",
     badgeAdmin: "অ্যাডমিনিস্ট্রেটর",
     privateWorkspaceBadge: "প্রাইভেট ওয়ার্কস্পেস",
+    adminLogin: "অ্যাডমিন লগইন",
     addNewDrug: "নতুন ওষুধ যুক্ত করুন",
     exportData: "ডেটা এক্সপোর্ট",
     importData: "ইমপোর্ট",

@@ -13,7 +13,7 @@ interface MedicineHeroCardProps {
   onToggleFavorite: () => void;
   onOpenWhatsAppDrawer: () => void;
   onPrint: () => void;
-  onEditClick: () => void;
+  onEditClick?: () => void;
 }
 
 export default function MedicineHeroCard({
@@ -177,16 +177,18 @@ export default function MedicineHeroCard({
               <span>প্রিন্ট মেমো</span>
             </button>
 
-            <button
-              type="button"
-              onClick={onEditClick}
-              className="flex items-center justify-center gap-1.5 px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface-variant font-label-md text-label-md font-medium hover:bg-surface-container-high transition-colors ml-auto cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-lg" aria-hidden="true">
-                edit_note
-              </span>
-              <span>ডাটা এডিট</span>
-            </button>
+            {onEditClick && (
+              <button
+                type="button"
+                onClick={onEditClick}
+                className="flex items-center justify-center gap-1.5 px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface-variant font-label-md text-label-md font-medium hover:bg-surface-container-high transition-colors ml-auto cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg" aria-hidden="true">
+                  edit_note
+                </span>
+                <span>ডাটা এডিট</span>
+              </button>
+            )}
           </div>
         </div>
 

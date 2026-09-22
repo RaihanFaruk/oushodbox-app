@@ -16,6 +16,7 @@ import MedicineAlternativesCard from "./MedicineAlternativesCard";
 import MedicinePriceHistory from "./MedicinePriceHistory";
 import MedicineClinicalDisclaimer from "./MedicineClinicalDisclaimer";
 import MedicineToast from "./MedicineToast";
+import { subscribeToAuthChanges, isAuthorizedAdmin } from "@/lib/auth";
 
 import type { MedicineMonograph } from "@/types";
 
@@ -29,8 +30,16 @@ export default function MedicineDetailsClient({
   const [isFavorite, setIsFavorite] = useState(false);
   const [isWhatsAppOpen, setIsWhatsAppOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToAuthChanges((user) => {
+      setIsAdmin(isAuthorizedAdmin(user));
+    });
+    return () => unsubscribe();
+  }, []);
 
   const showToast = (msg: string) => {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
@@ -91,7 +100,7 @@ export default function MedicineDetailsClient({
             onToggleFavorite={handleToggleFavorite}
             onOpenWhatsAppDrawer={() => setIsWhatsAppOpen(true)}
             onPrint={handlePrint}
-            onEditClick={handleEditClick}
+            onEditClick={isAdmin ? handleEditClick : undefined}
           />
 
           {/* WhatsApp Quick Dispatch Drawer Preview */}

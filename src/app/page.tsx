@@ -208,21 +208,23 @@ export default function HomePage() {
               </span>
             </div>
 
-            {/* Quick Add Medicine button */}
-            <button
-              type="button"
-              onClick={() => {
-                if (userEmail) {
-                  setIsAddModalOpen(true);
-                } else {
-                  router.push("/admin");
-                }
-              }}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all shadow-xs"
-            >
-              <span className="material-symbols-outlined text-base">add</span>
-              <span>{t("home.addNewMedicine")}</span>
-            </button>
+            {/* Quick Add Medicine button (admin only) */}
+            {isAuthAdmin && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (userEmail) {
+                    setIsAddModalOpen(true);
+                  } else {
+                    router.push("/admin");
+                  }
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all shadow-xs"
+              >
+                <span className="material-symbols-outlined text-base">add</span>
+                <span>{t("home.addNewMedicine")}</span>
+              </button>
+            )}
           </div>
         </header>
 
@@ -465,20 +467,22 @@ export default function HomePage() {
                     ওষুধের নাম, প্রস্তুতকারক কোম্পানি ও রেফারেন্স মূল্য তালিকা সহজে সংরক্ষণ করতে আপনার প্রথম ওষুধটি যুক্ত করুন।
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (userEmail) {
-                      setIsAddModalOpen(true);
-                    } else {
-                      router.push("/admin");
-                    }
-                  }}
-                  className="mt-2 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-primary-dark transition-all shadow-xs"
-                >
-                  <span className="material-symbols-outlined text-base">add</span>
-                  <span>প্রথম ওষুধ যোগ করুন</span>
-                </button>
+                {isAuthAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (userEmail) {
+                        setIsAddModalOpen(true);
+                      } else {
+                        router.push("/admin");
+                      }
+                    }}
+                    className="mt-2 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-primary-dark transition-all shadow-xs"
+                  >
+                    <span className="material-symbols-outlined text-base">add</span>
+                    <span>প্রথম ওষুধ যোগ করুন</span>
+                  </button>
+                )}
               </div>
             ) : filteredMedicines.length === 0 ? (
               /* No Search Match State */
@@ -637,25 +641,31 @@ export default function HomePage() {
             </p>
             <div className="flex items-center gap-3">
               <span>{isOnline ? "ক্লাউড সিঙ্ক সক্রিয়" : "অফলাইন মোড"}</span>
-              <span>•</span>
-              <Link href="/admin" className="hover:text-primary font-medium">
-                অ্যাডমিন কনসোল
-              </Link>
+              {isAuthAdmin && (
+                <>
+                  <span>•</span>
+                  <Link href="/admin" className="hover:text-primary font-medium">
+                    অ্যাডমিন কনসোল
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </footer>
       </div>
 
-      {/* Quick Add Medicine Modal */}
-      <AdminAddMedicineModal
-        isOpen={isAddModalOpen}
-        onClose={() => {
-          if (!isSubmitting) setIsAddModalOpen(false);
-        }}
-        onSave={handleSaveMedicine}
-        editingMedicine={null}
-        isSubmitting={isSubmitting}
-      />
+      {/* Quick Add Medicine Modal (admin only) */}
+      {isAuthAdmin && (
+        <AdminAddMedicineModal
+          isOpen={isAddModalOpen}
+          onClose={() => {
+            if (!isSubmitting) setIsAddModalOpen(false);
+          }}
+          onSave={handleSaveMedicine}
+          editingMedicine={null}
+          isSubmitting={isSubmitting}
+        />
+      )}
 
       {/* Mobile Fixed Bottom Navigation */}
       <MobileBottomNav />
