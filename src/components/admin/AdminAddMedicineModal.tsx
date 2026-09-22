@@ -45,8 +45,12 @@ export default function AdminAddMedicineModal({
       getMedicines()
         .then((meds) => {
           const comps = Array.from(
-            new Set(meds.map((m) => m.manufacturer?.trim()).filter(Boolean))
-          ).sort() as string[];
+            new Set(
+              meds
+                .map((m) => m.manufacturer?.trim())
+                .filter((c): c is string => Boolean(c && c !== "অনির্ধারিত"))
+            )
+          ).sort((a, b) => a.localeCompare(b));
           setFetchedCompanies(comps);
         })
         .catch(() => {});
@@ -280,7 +284,12 @@ export default function AdminAddMedicineModal({
                   }}
                   onFocus={() => setShowCompanySuggestions(true)}
                   onBlur={() => setTimeout(() => setShowCompanySuggestions(false), 200)}
-                  placeholder={isOther ? "যেমন: JMI, Getwell, বা যেকোনো..." : "যেমন: Square Pharma, Albion, ACI..."}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setShowCompanySuggestions(false);
+                    }
+                  }}
+                  placeholder={isOther ? "যেমন: JMI, Getwell, বা যেকোনো..." : "যেমন: Square, Beximco, Ibne Sina, Albion..."}
                   className="w-full px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
                 />
                 {showCompanySuggestions && filteredCompanySuggestions.length > 0 && (
