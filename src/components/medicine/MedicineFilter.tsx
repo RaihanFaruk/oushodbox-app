@@ -53,8 +53,8 @@ export default function MedicineFilter({
           aria-label="জেনেরিক গ্রুপ নির্বাচন করুন"
           className="w-full bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg px-space-sm py-2 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
         >
-          {GENERIC_FILTER_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
+          {GENERIC_FILTER_OPTIONS.map((opt, idx) => (
+            <option key={`generic-${opt.value}-${idx}`} value={opt.value}>
               {opt.label}
             </option>
           ))}
@@ -79,8 +79,8 @@ export default function MedicineFilter({
           aria-label="ডোজ ফরম নির্বাচন করুন"
           className="w-full bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg px-space-sm py-2 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
         >
-          {DOSAGE_FORM_FILTER_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
+          {DOSAGE_FORM_FILTER_OPTIONS.map((opt, idx) => (
+            <option key={`dosage-${opt.value}-${idx}`} value={opt.value}>
               {opt.label}
             </option>
           ))}
@@ -105,8 +105,8 @@ export default function MedicineFilter({
           aria-label="কোম্পানি বা ব্র্যান্ড নির্বাচন করুন"
           className="w-full bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg px-space-sm py-2 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
         >
-          {MANUFACTURER_FILTER_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
+          {MANUFACTURER_FILTER_OPTIONS.map((opt, idx) => (
+            <option key={`mfg-${opt.value}-${idx}`} value={opt.value}>
               {opt.label}
             </option>
           ))}
@@ -131,8 +131,8 @@ export default function MedicineFilter({
           aria-label="সর্টিং ও মূল্য নির্বাচন করুন"
           className="w-full bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg px-space-sm py-2 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
         >
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
+          {SORT_OPTIONS.map((opt, idx) => (
+            <option key={`sort-${opt.value}-${idx}`} value={opt.value}>
               {opt.label}
             </option>
           ))}

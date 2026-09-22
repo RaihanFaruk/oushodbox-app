@@ -77,11 +77,11 @@ export default function MedicineSearch({
           </span>
           <span>জনপ্রিয় অনুসন্ধান:</span>
         </span>
-        {POPULAR_SEARCH_TERMS.map((term) => {
+        {Array.from(new Set(POPULAR_SEARCH_TERMS)).map((term, index) => {
           const isSelected = value.toLowerCase() === term.toLowerCase();
           return (
             <button
-              key={term}
+              key={`search-term-${term}-${index}`}
               type="button"
               onClick={() => onChange(term)}
               className={`px-2.5 py-0.5 rounded-full font-label-sm text-label-sm transition-all cursor-pointer ${

@@ -425,7 +425,7 @@ export const SORT_OPTIONS: FilterSelectOption[] = [
 export const POPULAR_SEARCH_TERMS = [
   "Paracetamol",
   "Omeprazole",
-  "Paracetamol",
+  "Esomeprazole",
   "Azithromycin",
   "Square Pharmaceuticals",
 ];
