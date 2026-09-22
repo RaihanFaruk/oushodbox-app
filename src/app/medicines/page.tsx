@@ -25,8 +25,10 @@ import { saveMedicines, getMedicines as getCachedMedicines, clearMedicines } fro
 import { subscribeToAuthChanges, isAuthorizedAdmin } from "@/lib/auth";
 import type { DatabaseMedicine, MedicineViewMode } from "@/types";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function MedicineDatabasePage() {
+  const router = useRouter();
   // ─── Interactive State ───────────────────────────────────────────────────
   const [medicines, setMedicines] = useState<DatabaseMedicine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -128,7 +130,11 @@ export default function MedicineDatabasePage() {
       const authorized = isAuthorizedAdmin(user);
       setIsAuthenticated(authorized);
       setIsAuthChecking(false);
-      loadMedicines(authorized);
+      if (authorized) {
+        loadMedicines(true);
+      } else {
+        router.replace("/public");
+      }
     });
 
     const handleOnline = () => {
@@ -292,6 +298,28 @@ export default function MedicineDatabasePage() {
     showToast("ফিল্টার রিসেট করা হয়েছে");
   };
 
+  // While auth state is loading, show a neutral loading skeleton — NOT the filters
+  if (isAuthChecking) {
+    return (
+      <div className="flex min-h-screen bg-surface font-body-md text-body-md text-on-surface">
+        <Sidebar />
+        <div className="flex-1 flex flex-col min-w-0 pb-20 lg:pb-0">
+          <main className="flex-1 p-space-md lg:p-margin flex flex-col gap-space-lg w-full max-w-7xl mx-auto">
+            <div className="h-20 rounded-2xl bg-surface-container-low animate-pulse" />
+            <div className="h-12 rounded-xl bg-surface-container-low animate-pulse" />
+            <MedicineLoadingState count={6} />
+          </main>
+        </div>
+        <MobileBottomNav />
+      </div>
+    );
+  }
+
+  // If not authenticated admin, redirect already initiated via router.replace("/public")
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="flex min-h-screen bg-surface font-body-md text-body-md text-on-surface">
       {/* Desktop Left Rail Sidebar (lg+) */}
@@ -342,24 +370,7 @@ export default function MedicineDatabasePage() {
           />
 
           {/* Interactive Results Area */}
-          {!isAuthChecking && !isAuthenticated ? (
-            <div className="p-8 sm:p-12 text-center rounded-2xl bg-surface-container-lowest border border-[var(--color-border)] shadow-xs flex flex-col items-center justify-center max-w-md mx-auto w-full my-8">
-              <div className="w-14 h-14 rounded-2xl bg-surface-container-high flex items-center justify-center text-primary mb-4">
-                <span className="material-symbols-outlined text-3xl">lock</span>
-              </div>
-              <h2 className="text-xl font-bold text-on-surface">প্রাইভেট মেডিসিন ডেটাবেস</h2>
-              <p className="text-xs sm:text-sm text-on-surface-variant mt-2 leading-relaxed">
-                ওষুধের তালিকা ও রেফারেন্স মূল্য দেখতে অনুগ্রহ করে অনুমোদিত অ্যাডমিন অ্যাকাউন্টে সাইন ইন করুন।
-              </p>
-              <Link
-                href="/admin/login"
-                className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:bg-primary-dark transition-all"
-              >
-                <span className="material-symbols-outlined text-lg">login</span>
-                <span>অ্যাডমিন লগইন</span>
-              </Link>
-            </div>
-          ) : isLoading ? (
+          {isLoading ? (
             <MedicineLoadingState count={6} />
           ) : isError ? (
             <MedicineEmptyState
