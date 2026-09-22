@@ -221,6 +221,18 @@ export default function MedicineDatabasePage() {
       });
   }, [medicines, searchQuery, genericFilter, dosageFormFilter, manufacturerFilter, sortBy]);
 
+  // Derive dynamic company list from actual stored medicines
+  const companyOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const m of medicines) {
+      const comp = m.manufacturer?.trim();
+      if (comp && comp !== "অনির্ধারিত") {
+        set.add(comp);
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [medicines]);
+
   // ─── Selection Handlers ──────────────────────────────────────────────────
   const toggleSelectOne = (id: string) => {
     setSelectedIds((prev) => {
@@ -359,6 +371,7 @@ export default function MedicineDatabasePage() {
             onManufacturerChange={(val) => setManufacturerFilter(val)}
             sortBy={sortBy}
             onSortChange={setSortBy}
+            companyOptions={companyOptions}
           />
 
           {/* Bulk WhatsApp Batch Action Panel */}

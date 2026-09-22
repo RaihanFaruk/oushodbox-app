@@ -8,7 +8,6 @@
 import {
   GENERIC_FILTER_OPTIONS,
   DOSAGE_FORM_FILTER_OPTIONS,
-  MANUFACTURER_FILTER_OPTIONS,
   SORT_OPTIONS,
 } from "@/lib/mock-data";
 
@@ -21,6 +20,7 @@ interface MedicineFilterProps {
   onManufacturerChange: (value: string) => void;
   sortBy: string;
   onSortChange: (value: string) => void;
+  companyOptions?: string[];
 }
 
 export default function MedicineFilter({
@@ -32,6 +32,7 @@ export default function MedicineFilter({
   onManufacturerChange,
   sortBy,
   onSortChange,
+  companyOptions = [],
 }: MedicineFilterProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-space-md p-space-md rounded-xl bg-surface-container-lowest shadow-sm">
@@ -105,9 +106,10 @@ export default function MedicineFilter({
           aria-label="কোম্পানি বা ব্র্যান্ড নির্বাচন করুন"
           className="w-full bg-surface-container-low text-on-surface font-body-md text-body-md rounded-lg px-space-sm py-2 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer transition-all"
         >
-          {MANUFACTURER_FILTER_OPTIONS.map((opt, idx) => (
-            <option key={`mfg-${opt.value}-${idx}`} value={opt.value}>
-              {opt.label}
+          <option value="all">সকল প্রস্তুতকারক (All)</option>
+          {companyOptions.map((comp, idx) => (
+            <option key={`mfg-${comp}-${idx}`} value={comp}>
+              {comp}
             </option>
           ))}
         </select>

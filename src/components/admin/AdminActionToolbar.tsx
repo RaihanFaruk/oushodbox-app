@@ -25,6 +25,7 @@ interface AdminActionToolbarProps {
   onResetFilters: () => void;
   onExportData: () => void;
   onCopyFullList?: () => void;
+  companyOptions?: string[];
 }
 
 export default function AdminActionToolbar({
@@ -47,6 +48,7 @@ export default function AdminActionToolbar({
   onResetFilters,
   onExportData,
   onCopyFullList,
+  companyOptions = [],
 }: AdminActionToolbarProps) {
   return (
     <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm flex flex-col gap-space-md border border-[var(--color-border)]">
@@ -150,11 +152,11 @@ export default function AdminActionToolbar({
             className="w-full px-space-sm py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none border border-transparent focus:border-primary/20 cursor-pointer"
           >
             <option value="">কোম্পানি (All)</option>
-            <option value="Beximco Pharma">Beximco Pharma</option>
-            <option value="Square Pharma">Square Pharma</option>
-            <option value="Incepta Pharma">Incepta Pharma</option>
-            <option value="Renata Ltd">Renata Ltd</option>
-            <option value="Acme Laboratories">Acme Laboratories</option>
+            {companyOptions.map((comp, idx) => (
+              <option key={`admin-comp-${comp}-${idx}`} value={comp}>
+                {comp}
+              </option>
+            ))}
           </select>
         </div>
 

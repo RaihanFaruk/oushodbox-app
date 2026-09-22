@@ -168,6 +168,18 @@ export default function AdminPanelClient() {
     return list;
   }, [medicines, searchQuery, companyFilter, formFilter, statusFilter, sortBy]);
 
+  // Derive dynamic company list from actual stored medicines
+  const companyOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const m of medicines) {
+      const comp = m.manufacturer?.trim();
+      if (comp && comp !== "অনির্ধারিত") {
+        set.add(comp);
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [medicines]);
+
   // Statistics derived
   const pendingCount = useMemo(
     () => medicines.filter((m) => m.status === "pending").length,
@@ -469,6 +481,7 @@ export default function AdminPanelClient() {
             onResetFilters={handleResetFilters}
             onExportData={handleExportData}
             onCopyFullList={handleCopyFullList}
+            companyOptions={companyOptions}
           />
 
           {/* Central Medicine Data Registry Table */}
@@ -537,6 +550,7 @@ export default function AdminPanelClient() {
         onSave={handleSaveMedicine}
         editingMedicine={editingMedicine}
         isSubmitting={isSubmitting}
+        existingCompanies={companyOptions}
       />
 
       {/* Delete Confirmation Modal */}

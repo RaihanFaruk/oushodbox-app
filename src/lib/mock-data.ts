@@ -56,17 +56,6 @@ export const DOSAGE_FORM_FILTER_OPTIONS: FilterSelectOption[] = [
   { value: "ointment", label: "অয়েন্টমেন্ট (Ointment)" },
 ];
 
-export const MANUFACTURER_FILTER_OPTIONS: FilterSelectOption[] = [
-  { value: "all", label: "সকল প্রস্তুতকারক (All)" },
-  { value: "square", label: "Square Pharmaceuticals" },
-  { value: "beximco", label: "Beximco Pharma" },
-  { value: "incepta", label: "Incepta Pharma" },
-  { value: "renata", label: "Renata Limited" },
-  { value: "opsonin", label: "Opsonin Pharma" },
-  { value: "eskayef", label: "Eskayef (SK+F)" },
-  { value: "acme", label: "Acme Laboratories" },
-];
-
 export const SORT_OPTIONS: FilterSelectOption[] = [
   { value: "updated", label: "সম্প্রতি হালনাগাদ (Recently Updated)" },
   { value: "alpha", label: "নাম অনুসারে (A-Z)" },

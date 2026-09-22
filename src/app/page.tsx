@@ -143,12 +143,17 @@ export default function HomePage() {
 
   // Real statistics derived from actual data
   const totalCount = medicines.length;
-  const uniqueCompanies = useMemo(() => {
-    const set = new Set(
-      medicines.map((m) => m.manufacturer?.trim()).filter(Boolean)
-    );
-    return set.size;
+  const companyList = useMemo(() => {
+    const set = new Set<string>();
+    for (const m of medicines) {
+      const comp = m.manufacturer?.trim();
+      if (comp && comp !== "অনির্ধারিত") {
+        set.add(comp);
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [medicines]);
+  const uniqueCompanies = companyList.length;
 
   // Single-tap WhatsApp share
   const handleWhatsAppShare = (med: DatabaseMedicine) => {
@@ -669,6 +674,7 @@ export default function HomePage() {
           onSave={handleSaveMedicine}
           editingMedicine={null}
           isSubmitting={isSubmitting}
+          existingCompanies={companyList}
         />
       )}
 

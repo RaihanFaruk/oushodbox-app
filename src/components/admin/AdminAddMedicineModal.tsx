@@ -5,7 +5,8 @@
  * Faithfully migrated from Stitch admin_panel/code.html
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { getMedicines } from "@/lib/firestore/medicines";
 import type { AdminMedicineItem } from "@/types";
 
 interface AdminAddMedicineModalProps {
@@ -14,6 +15,7 @@ interface AdminAddMedicineModalProps {
   onSave: (data: Partial<AdminMedicineItem>) => void;
   editingMedicine: AdminMedicineItem | null;
   isSubmitting?: boolean;
+  existingCompanies?: string[];
 }
 
 export default function AdminAddMedicineModal({
@@ -22,16 +24,46 @@ export default function AdminAddMedicineModal({
   onSave,
   editingMedicine,
   isSubmitting = false,
+  existingCompanies = [],
 }: AdminAddMedicineModalProps) {
   const [tradeName, setTradeName] = useState("");
   const [genericName, setGenericName] = useState("");
   const [manufacturer, setManufacturer] = useState("");
+  const [showCompanySuggestions, setShowCompanySuggestions] = useState(false);
+  const [fetchedCompanies, setFetchedCompanies] = useState<string[]>([]);
   const [dosageForm, setDosageForm] = useState("ট্যাবলেট");
   const [strength, setStrength] = useState("");
   const [mrp, setMrp] = useState("");
   const [discountPct, setDiscountPct] = useState("0");
   const [notes, setNotes] = useState("");
   const [isInstantPublish, setIsInstantPublish] = useState(true);
+
+  // Load companies if not passed as prop
+  useEffect(() => {
+    if (!existingCompanies || existingCompanies.length === 0) {
+      getMedicines()
+        .then((meds) => {
+          const comps = Array.from(
+            new Set(meds.map((m) => m.manufacturer?.trim()).filter(Boolean))
+          ).sort() as string[];
+          setFetchedCompanies(comps);
+        })
+        .catch(() => {});
+    }
+  }, [existingCompanies]);
+
+  const availableCompanies =
+    existingCompanies && existingCompanies.length > 0
+      ? existingCompanies
+      : fetchedCompanies;
+
+  const filteredCompanySuggestions = useMemo(() => {
+    const q = manufacturer.trim().toLowerCase();
+    if (!q) return availableCompanies.slice(0, 8);
+    return availableCompanies
+      .filter((c) => c.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [manufacturer, availableCompanies]);
 
   // Populate fields when editing
   useEffect(() => {
@@ -169,24 +201,43 @@ export default function AdminAddMedicineModal({
 
           {/* Row 2: Manufacturer, Form & Strength */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md">
-            <div className="flex flex-col gap-space-xs">
-              <label className="font-label-md text-label-md text-on-surface font-semibold">
-                প্রস্তুতকারক কোম্পানি *
+            <div className="flex flex-col gap-space-xs relative">
+              <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
+                <span>প্রস্তুতকারক কোম্পানি</span>
+                <span className="text-[11px] text-on-surface-variant font-normal">যেকোনো নাম লিখুন</span>
               </label>
-              <select
-                value={manufacturer}
-                onChange={(e) => setManufacturer(e.target.value)}
-                className="px-space-sm py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none border border-transparent focus:border-primary/30 cursor-pointer"
-                required
-              >
-                <option value="">কোম্পানি নির্বাচন করুন</option>
-                <option value="Beximco Pharma">Beximco Pharma</option>
-                <option value="Square Pharma">Square Pharma</option>
-                <option value="Incepta Pharma">Incepta Pharma</option>
-                <option value="Renata Ltd">Renata Ltd</option>
-                <option value="Acme Laboratories">Acme Laboratories</option>
-                <option value="Eskayef (SK+F)">Eskayef (SK+F)</option>
-              </select>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={manufacturer}
+                  onChange={(e) => {
+                    setManufacturer(e.target.value);
+                    setShowCompanySuggestions(true);
+                  }}
+                  onFocus={() => setShowCompanySuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowCompanySuggestions(false), 200)}
+                  placeholder="যেমন: Square Pharma, Albion, ACI..."
+                  className="w-full px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
+                />
+                {showCompanySuggestions && filteredCompanySuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-surface-container-lowest border border-[var(--color-border)] rounded-xl shadow-lg z-50 max-h-48 overflow-y-auto py-1">
+                    {filteredCompanySuggestions.map((comp, idx) => (
+                      <button
+                        key={`company-suggest-${comp}-${idx}`}
+                        type="button"
+                        onMouseDown={() => {
+                          setManufacturer(comp);
+                          setShowCompanySuggestions(false);
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs hover:bg-surface-container-low text-on-surface flex items-center justify-between transition-colors cursor-pointer"
+                      >
+                        <span className="font-medium">{comp}</span>
+                        <span className="text-[10px] text-on-surface-variant">পূর্বে ব্যবহৃত</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex flex-col gap-space-xs">
