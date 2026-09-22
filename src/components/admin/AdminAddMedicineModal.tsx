@@ -36,8 +36,6 @@ export default function AdminAddMedicineModal({
   const [strength, setStrength] = useState("");
   const [mrp, setMrp] = useState("");
   const [discountPct, setDiscountPct] = useState("0");
-  const [notes, setNotes] = useState("");
-  const [isInstantPublish, setIsInstantPublish] = useState(true);
 
   // Load companies if not passed as prop
   useEffect(() => {
@@ -81,8 +79,6 @@ export default function AdminAddMedicineModal({
       setStrength(editingMedicine.strength || "");
       setMrp(editingMedicine.mrp.toString());
       setDiscountPct((editingMedicine.discountPct ?? 0).toString());
-      setNotes(editingMedicine.notes || "");
-      setIsInstantPublish(editingMedicine.status === "live");
     } else {
       setItemType("medicine");
       setTradeName("");
@@ -92,8 +88,6 @@ export default function AdminAddMedicineModal({
       setStrength("");
       setMrp("");
       setDiscountPct("0");
-      setNotes("");
-      setIsInstantPublish(true);
     }
   }, [editingMedicine, isOpen]);
 
@@ -139,9 +133,8 @@ export default function AdminAddMedicineModal({
       mrp: parsedMrp,
       mrpFormatted: `৳ ${parsedMrp.toFixed(2)}`,
       discountPct: parsedDiscount,
-      status: isInstantPublish ? "live" : "pending",
+      status: editingMedicine?.status || "live",
       iconType,
-      notes,
     });
   };
 
@@ -403,42 +396,6 @@ export default function AdminAddMedicineModal({
                 </span>
               </div>
             </div>
-          </div>
-
-          {/* Row 4: Clinical & Safety Notes */}
-          <div className="flex flex-col gap-space-xs">
-            <label className="font-label-md text-label-md text-on-surface font-semibold">
-              বিস্তারিত বিবরণ ও নির্দেশনা (Clinical & Safety Notes)
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              className="w-full p-space-md rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
-              placeholder="ওষুধ খাওয়ার নিয়ম, পার্শ্বপ্রতিক্রিয়া এবং সতর্কবার্তা বাংলা বা ইংরেজিতে লিখুন..."
-              rows={3}
-            />
-          </div>
-
-          {/* Row 5: Immediate Publish */}
-          <div className="p-space-sm rounded-xl bg-surface-container-low flex items-center justify-between border border-[var(--color-border)]">
-            <div className="flex items-center gap-space-xs">
-              <input
-                id="immediate-verify"
-                checked={isInstantPublish}
-                onChange={(e) => setIsInstantPublish(e.target.checked)}
-                className="rounded accent-primary w-4 h-4 cursor-pointer"
-                type="checkbox"
-              />
-              <label
-                htmlFor="immediate-verify"
-                className="font-label-sm text-label-sm text-on-surface cursor-pointer select-none font-medium"
-              >
-                তাত্ক্ষণিকভাবে DGDA রেজিস্ট্রি অনুযায়ী লাইভ করুন (Instant Live Publish)
-              </label>
-            </div>
-            <span className="text-tertiary font-label-sm text-label-sm font-semibold">
-              স্বয়ংক্রিয় অডিট সক্রিয়
-            </span>
           </div>
 
           {/* Actions */}
