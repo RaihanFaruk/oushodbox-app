@@ -108,11 +108,11 @@ export default function MedicineList({
                     )}
                   </div>
                   <span className="font-label-sm text-label-sm text-on-surface-variant">
-                    {med.dosageBadge} • {med.packSize.split(" ")[0]}
+                    {med.dosageBadge}{med.packSize ? ` • ${med.packSize.split(" ")[0]}` : ""}
                   </span>
                 </td>
-                <td className="p-4 font-medium max-w-xs">{med.genericName}</td>
-                <td className="p-4 text-secondary">{med.manufacturer}</td>
+                <td className="p-4 font-medium max-w-xs">{med.genericName || "—"}</td>
+                <td className="p-4 text-secondary">{med.manufacturer || "—"}</td>
                 <td className="p-4 text-right font-bold text-on-surface">
                   {med.unitPriceFormatted}
                 </td>

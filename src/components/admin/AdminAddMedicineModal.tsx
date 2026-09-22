@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { getMedicines } from "@/lib/firestore/medicines";
-import type { AdminMedicineItem } from "@/types";
+import type { AdminMedicineItem, ItemType } from "@/types";
 
 interface AdminAddMedicineModalProps {
   isOpen: boolean;
@@ -26,6 +26,7 @@ export default function AdminAddMedicineModal({
   isSubmitting = false,
   existingCompanies = [],
 }: AdminAddMedicineModalProps) {
+  const [itemType, setItemType] = useState<ItemType>("medicine");
   const [tradeName, setTradeName] = useState("");
   const [genericName, setGenericName] = useState("");
   const [manufacturer, setManufacturer] = useState("");
@@ -68,16 +69,18 @@ export default function AdminAddMedicineModal({
   // Populate fields when editing
   useEffect(() => {
     if (editingMedicine) {
+      setItemType(editingMedicine.itemType || "medicine");
       setTradeName(editingMedicine.tradeName);
-      setGenericName(editingMedicine.genericName);
+      setGenericName(editingMedicine.genericName || "");
       setManufacturer(editingMedicine.manufacturer || "");
-      setDosageForm(editingMedicine.dosageForm);
-      setStrength(editingMedicine.strength);
+      setDosageForm(editingMedicine.dosageForm || (editingMedicine.itemType === "other" ? "সার্জিক্যাল ও অন্যান্য" : "ট্যাবলেট"));
+      setStrength(editingMedicine.strength || "");
       setMrp(editingMedicine.mrp.toString());
       setDiscountPct((editingMedicine.discountPct ?? 0).toString());
       setNotes(editingMedicine.notes || "");
       setIsInstantPublish(editingMedicine.status === "live");
     } else {
+      setItemType("medicine");
       setTradeName("");
       setGenericName("");
       setManufacturer("");
@@ -92,27 +95,43 @@ export default function AdminAddMedicineModal({
 
   if (!isOpen) return null;
 
+  const isOther = itemType === "other";
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
-    if (!tradeName || !genericName || !strength || !mrp) return;
+
+    if (isOther) {
+      if (!tradeName.trim() || !mrp.trim()) return;
+    } else {
+      if (!tradeName.trim() || !genericName.trim() || !strength.trim() || !mrp.trim()) return;
+    }
 
     const parsedMrp = parseFloat(mrp) || 0;
     const parsedDiscount = parseFloat(discountPct) || 0;
 
     let iconType: "pill" | "liquid" | "injection" = "pill";
-    if (dosageForm.includes("ক্যাপসুল") || dosageForm.includes("সিরাপ") || dosageForm.toLowerCase().includes("syrup") || dosageForm.toLowerCase().includes("capsule")) {
+    if (
+      dosageForm.includes("ক্যাপসুল") ||
+      dosageForm.includes("সিরাপ") ||
+      dosageForm.toLowerCase().includes("syrup") ||
+      dosageForm.toLowerCase().includes("capsule")
+    ) {
       iconType = "liquid";
-    } else if (dosageForm.includes("ইনজেকশন") || dosageForm.toLowerCase().includes("injection")) {
+    } else if (
+      dosageForm.includes("ইনজেকশন") ||
+      dosageForm.toLowerCase().includes("injection")
+    ) {
       iconType = "injection";
     }
 
     onSave({
+      itemType,
       tradeName: tradeName.trim(),
       genericName: genericName.trim(),
-      manufacturer: manufacturer.trim() || "অনির্ধারিত",
-      dosageForm,
-      strength,
+      manufacturer: manufacturer.trim(),
+      dosageForm: isOther && dosageForm === "ট্যাবলেট" ? "সার্জিক্যাল ও অন্যান্য" : dosageForm,
+      strength: strength.trim(),
       mrp: parsedMrp,
       mrpFormatted: `৳ ${parsedMrp.toFixed(2)}`,
       discountPct: parsedDiscount,
@@ -166,18 +185,59 @@ export default function AdminAddMedicineModal({
 
         {/* Modal Form */}
         <form onSubmit={handleSubmit} className="p-space-lg overflow-y-auto flex flex-col gap-space-md">
+          {/* Item Type Selector */}
+          <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-surface-container-low border border-[var(--color-border)]">
+            <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
+              <span>আইটেমের ধরণ (Item Type) *</span>
+              <span className="text-xs text-on-surface-variant font-normal">
+                {isOther ? "সার্জিক্যাল/অন্যান্য আইটেমে জেনেরিক ও কোম্পানি ঐচ্ছিক" : "ওষুধের জেনেরিক ও মাত্রা পূরণ করুন"}
+              </span>
+            </label>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <button
+                type="button"
+                onClick={() => setItemType("medicine")}
+                className={`py-2 px-3 rounded-lg text-sm transition-all flex items-center justify-center gap-2 cursor-pointer border ${
+                  itemType === "medicine"
+                    ? "bg-primary text-on-primary border-primary font-bold shadow-xs"
+                    : "bg-surface-container border-[var(--color-border)] text-on-surface hover:bg-surface-container-high"
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">medication</span>
+                <span>ওষুধ (Medicine)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setItemType("other");
+                  if (dosageForm === "ট্যাবলেট") {
+                    setDosageForm("সার্জিক্যাল ও অন্যান্য");
+                  }
+                }}
+                className={`py-2 px-3 rounded-lg text-sm transition-all flex items-center justify-center gap-2 cursor-pointer border ${
+                  itemType === "other"
+                    ? "bg-primary text-on-primary border-primary font-bold shadow-xs"
+                    : "bg-surface-container border-[var(--color-border)] text-on-surface hover:bg-surface-container-high"
+                }`}
+              >
+                <span className="material-symbols-outlined text-base">medical_services</span>
+                <span>সার্জিক্যাল ও অন্যান্য</span>
+              </button>
+            </div>
+          </div>
+
           {/* Row 1: Trade Name & Generic Name */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
             <div className="flex flex-col gap-space-xs">
               <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
-                <span>ওষুধের নাম (Trade Name) *</span>
+                <span>{isOther ? "আইটেম / পণ্যের নাম *" : "ওষুধের নাম (Trade Name) *"}</span>
                 <span className="text-tertiary font-label-sm text-label-sm">বাধ্যতামূলক</span>
               </label>
               <input
                 value={tradeName}
                 onChange={(e) => setTradeName(e.target.value)}
                 className="px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
-                placeholder="যেমন: Napa One"
+                placeholder={isOther ? "যেমন: সার্জিক্যাল ডিসপোজেবল সিরিঞ্জ 5ml" : "যেমন: Napa One"}
                 required
                 type="text"
               />
@@ -185,15 +245,19 @@ export default function AdminAddMedicineModal({
 
             <div className="flex flex-col gap-space-xs">
               <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
-                <span>জেনেরিক নাম (Generic Name) *</span>
-                <span className="text-tertiary font-label-sm text-label-sm">বাধ্যতামূলক</span>
+                <span>{isOther ? "জেনেরিক / উপাদান (ঐচ্ছিক)" : "জেনেরিক নাম (Generic Name) *"}</span>
+                {isOther ? (
+                  <span className="text-on-surface-variant text-[11px]">ঐচ্ছিক</span>
+                ) : (
+                  <span className="text-tertiary font-label-sm text-label-sm">বাধ্যতামূলক</span>
+                )}
               </label>
               <input
                 value={genericName}
                 onChange={(e) => setGenericName(e.target.value)}
                 className="px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
-                placeholder="যেমন: Paracetamol 1000mg"
-                required
+                placeholder={isOther ? "প্রযোজ্য হলে লিখুন..." : "যেমন: Paracetamol 1000mg"}
+                required={!isOther}
                 type="text"
               />
             </div>
@@ -203,7 +267,7 @@ export default function AdminAddMedicineModal({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-space-md">
             <div className="flex flex-col gap-space-xs relative">
               <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
-                <span>প্রস্তুতকারক কোম্পানি</span>
+                <span>{isOther ? "কোম্পানি / ব্র্যান্ড (ঐচ্ছিক)" : "প্রস্তুতকারক কোম্পানি"}</span>
                 <span className="text-[11px] text-on-surface-variant font-normal">যেকোনো নাম লিখুন</span>
               </label>
               <div className="relative">
@@ -216,7 +280,7 @@ export default function AdminAddMedicineModal({
                   }}
                   onFocus={() => setShowCompanySuggestions(true)}
                   onBlur={() => setTimeout(() => setShowCompanySuggestions(false), 200)}
-                  placeholder="যেমন: Square Pharma, Albion, ACI..."
+                  placeholder={isOther ? "যেমন: JMI, Getwell, বা যেকোনো..." : "যেমন: Square Pharma, Albion, ACI..."}
                   className="w-full px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
                 />
                 {showCompanySuggestions && filteredCompanySuggestions.length > 0 && (
@@ -242,7 +306,7 @@ export default function AdminAddMedicineModal({
 
             <div className="flex flex-col gap-space-xs">
               <label className="font-label-md text-label-md text-on-surface font-semibold">
-                ডোজ ফরম (Form) *
+                {isOther ? "ধরণ / ক্যাটাগরি *" : "ডোজ ফরম (Form) *"}
               </label>
               <select
                 value={dosageForm}
@@ -250,24 +314,42 @@ export default function AdminAddMedicineModal({
                 className="px-space-sm py-2.5 rounded-xl bg-surface-container-low text-on-surface font-body-md text-body-md focus:outline-none border border-transparent focus:border-primary/30 cursor-pointer"
                 required
               >
-                <option value="ট্যাবলেট">ট্যাবলেট (Tablet)</option>
-                <option value="ক্যাপসুল">ক্যাপসুল (Capsule)</option>
-                <option value="সিরাপ">সিরাপ (Syrup)</option>
-                <option value="ইনজেকশন">ইনজেকশন (Injection)</option>
-                <option value="ড্রপ">আই/ইয়ার ড্রপস</option>
+                {isOther ? (
+                  <>
+                    <option value="সার্জিক্যাল ও অন্যান্য">সার্জিক্যাল ও অন্যান্য</option>
+                    <option value="ডিসপোজেবল">ডিসপোজেবল</option>
+                    <option value="পিস / ইউনিট">পিস / ইউনিট</option>
+                    <option value="বক্স / প্যাকেট">বক্স / প্যাকেট</option>
+                    <option value="রোল / গজ">রোল / গজ</option>
+                    <option value="অন্যান্য">অন্যান্য</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="ট্যাবলেট">ট্যাবলেট (Tablet)</option>
+                    <option value="ক্যাপসুল">ক্যাপসুল (Capsule)</option>
+                    <option value="সিরাপ">সিরাপ (Syrup)</option>
+                    <option value="ইনজেকশন">ইনজেকশন (Injection)</option>
+                    <option value="ড্রপ">আই/ইয়ার ড্রপস</option>
+                  </>
+                )}
               </select>
             </div>
 
             <div className="flex flex-col gap-space-xs">
-              <label className="font-label-md text-label-md text-on-surface font-semibold">
-                শক্তি / মাত্রা (Strength) *
+              <label className="font-label-md text-label-md text-on-surface font-semibold flex items-center justify-between">
+                <span>{isOther ? "সাইজ / স্পেসিফিকেশন" : "শক্তি / মাত্রা (Strength) *"}</span>
+                {isOther ? (
+                  <span className="text-on-surface-variant text-[11px]">ঐচ্ছিক</span>
+                ) : (
+                  <span className="text-tertiary font-label-sm text-label-sm">বাধ্যতামূলক</span>
+                )}
               </label>
               <input
                 value={strength}
                 onChange={(e) => setStrength(e.target.value)}
                 className="px-space-md py-2.5 rounded-xl bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/70 font-body-md text-body-md focus:outline-none focus:bg-surface-container-lowest shadow-sm border border-transparent focus:border-primary/30"
-                placeholder="যেমন: 1000 mg"
-                required
+                placeholder={isOther ? "যেমন: 5ml, Large, 10cm x 10cm" : "যেমন: 1000 mg"}
+                required={!isOther}
                 type="text"
               />
             </div>

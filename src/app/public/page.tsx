@@ -205,7 +205,10 @@ export default function PublicPriceListPage() {
           <div className="flex flex-col gap-2.5">
             {filteredMedicines.map((med) => {
               const strengthStr = (med as any).strength || med.dosageBadge || "";
-              const badgeText = (med.dosageBadge || "").includes("ইনজেকশন")
+              const isOther = med.itemType === "other";
+              const badgeText = isOther
+                ? "OTH"
+                : (med.dosageBadge || "").includes("ইনজেকশন")
                 ? "INJ"
                 : (med.dosageBadge || "").includes("সিরাপ")
                 ? "SYR"
@@ -242,15 +245,29 @@ export default function PublicPriceListPage() {
                         )}
                       </div>
 
-                      <div className="flex items-center gap-1.5 text-xs text-on-surface-variant mt-0.5 flex-wrap">
-                        <span className="font-medium text-on-surface/90 truncate">
-                          {med.genericName || "জেনেরিক তথ্য নেই"}
-                        </span>
-                        <span>•</span>
-                        <span className="text-on-surface-variant truncate">
-                          {med.manufacturer || "অনির্ধারিত কোম্পানি"}
-                        </span>
-                      </div>
+                      {(med.genericName || med.manufacturer) && (
+                        <div className="flex items-center gap-1.5 text-xs text-on-surface-variant mt-0.5 flex-wrap">
+                          {med.genericName ? (
+                            <span className="font-medium text-on-surface/90 truncate">
+                              {med.genericName}
+                            </span>
+                          ) : !isOther ? (
+                            <span className="font-medium text-on-surface/90 truncate">
+                              জেনেরিক তথ্য নেই
+                            </span>
+                          ) : null}
+                          {med.genericName && med.manufacturer && <span>•</span>}
+                          {med.manufacturer ? (
+                            <span className="text-on-surface-variant truncate">
+                              {med.manufacturer}
+                            </span>
+                          ) : !isOther ? (
+                            <span className="text-on-surface-variant truncate">
+                              অনির্ধারিত কোম্পানি
+                            </span>
+                          ) : null}
+                        </div>
+                      )}
                     </div>
                   </div>
 

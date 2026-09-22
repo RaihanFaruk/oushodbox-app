@@ -520,6 +520,7 @@ export default function HomePage() {
                 {filteredMedicines.slice(0, 10).map((med) => {
                   const strengthStr =
                     (med as any).strength || med.dosageBadge || "";
+                  const isOther = med.itemType === "other";
                   const isCapsule =
                     (med.dosageBadge || "").includes("ক্যাপসুল") ||
                     med.dosageForm === "capsule";
@@ -530,7 +531,9 @@ export default function HomePage() {
                     (med.dosageBadge || "").includes("ইনজেকশন") ||
                     med.dosageForm === "injection";
 
-                  const badgeText = isInjection
+                  const badgeText = isOther
+                    ? "OTH"
+                    : isInjection
                     ? "INJ"
                     : isLiquid
                     ? "SYR"
@@ -548,7 +551,9 @@ export default function HomePage() {
                         <div className="w-10 h-10 rounded-xl bg-surface-container-high flex flex-col items-center justify-center shrink-0 text-primary font-bold text-xs">
                           <span>{badgeText}</span>
                           <span className="material-symbols-outlined text-sm -mt-0.5">
-                            {isInjection
+                            {isOther
+                              ? "medical_services"
+                              : isInjection
                               ? "vaccines"
                               : isLiquid
                               ? "water_drop"
@@ -571,15 +576,27 @@ export default function HomePage() {
                             )}
                           </div>
 
-                          <div className="flex items-center gap-2 text-xs text-on-surface-variant mt-0.5 flex-wrap">
-                            <span className="truncate">
-                              {med.genericName || "জেনেরিক তথ্য নেই"}
-                            </span>
-                            <span className="text-outline/50">•</span>
-                            <span className="font-medium text-on-surface/80 truncate">
-                              {med.manufacturer || "অনির্ধারিত কোম্পানি"}
-                            </span>
-                          </div>
+                          {(med.genericName || med.manufacturer) && (
+                            <div className="flex items-center gap-2 text-xs text-on-surface-variant mt-0.5 flex-wrap">
+                              {med.genericName ? (
+                                <span className="truncate">{med.genericName}</span>
+                              ) : !isOther ? (
+                                <span className="truncate">জেনেরিক তথ্য নেই</span>
+                              ) : null}
+                              {med.genericName && med.manufacturer && (
+                                <span className="text-outline/50">•</span>
+                              )}
+                              {med.manufacturer ? (
+                                <span className="font-medium text-on-surface/80 truncate">
+                                  {med.manufacturer}
+                                </span>
+                              ) : !isOther ? (
+                                <span className="font-medium text-on-surface/80 truncate">
+                                  অনির্ধারিত কোম্পানি
+                                </span>
+                              ) : null}
+                            </div>
+                          )}
                         </div>
                       </div>
 

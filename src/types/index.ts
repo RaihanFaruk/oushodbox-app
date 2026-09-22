@@ -6,9 +6,11 @@
 // ---- Medicine -------------------------------------------------------
 
 export type MedicineSchedule = "OTC" | "Schedule_H" | "Narcotic" | "Prescription";
+export type ItemType = "medicine" | "other";
 
 export interface Medicine {
   id: string;
+  itemType?: ItemType;        // "medicine" | "other" (default: "medicine")
   tradeName: string;          // e.g. "Napa Extra"
   tradeNameBn?: string;       // Bengali trade name
   genericName: string;        // e.g. "Paracetamol + Caffeine"
@@ -35,6 +37,7 @@ export interface Medicine {
 
 export interface DatabaseMedicine {
   id: string;                    // slug id for routing (e.g. 'napa-extra')
+  itemType?: ItemType;           // "medicine" | "other" (default: "medicine")
   tradeName: string;             // e.g. 'Napa Extra'
   genericName: string;           // e.g. 'Paracetamol 500mg + Caffeine 65mg'
   manufacturer: string;          // e.g. 'Beximco Pharma'
@@ -177,6 +180,7 @@ export type AdminMedicineStatus = "live" | "pending" | "draft";
 
 export interface AdminMedicineItem {
   id: string;
+  itemType?: ItemType;
   tradeName: string;
   strength: string;
   dosageForm: string;        // e.g. "Tablet", "Capsule", "Syrup", "Injection", "Drop"

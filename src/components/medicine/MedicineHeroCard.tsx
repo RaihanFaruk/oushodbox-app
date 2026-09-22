@@ -66,19 +66,33 @@ export default function MedicineHeroCard({
                 {monograph.tradeNameBn} ({monograph.dosageBadge})
               </span>
             </div>
-            <div className="flex items-center gap-space-xs mt-1 flex-wrap">
-              <span className="font-headline-sm text-headline-sm text-primary font-bold">
-                {monograph.genericName}
-              </span>
-              <span className="text-outline select-none">•</span>
-              <span className="text-secondary font-semibold">
-                {monograph.manufacturer}
-              </span>
-              <span className="text-outline select-none">•</span>
-              <span className="text-on-surface-variant font-medium">
-                প্ল্যান্ট: {monograph.plantLocation}
-              </span>
-            </div>
+            {(monograph.genericName || monograph.manufacturer || monograph.plantLocation) && (
+              <div className="flex items-center gap-space-xs mt-1 flex-wrap">
+                {monograph.genericName && (
+                  <span className="font-headline-sm text-headline-sm text-primary font-bold">
+                    {monograph.genericName}
+                  </span>
+                )}
+                {monograph.genericName && monograph.manufacturer && (
+                  <span className="text-outline select-none">•</span>
+                )}
+                {monograph.manufacturer && (
+                  <span className="text-secondary font-semibold">
+                    {monograph.manufacturer}
+                  </span>
+                )}
+                {monograph.plantLocation && (
+                  <>
+                    {(monograph.genericName || monograph.manufacturer) && (
+                      <span className="text-outline select-none">•</span>
+                    )}
+                    <span className="text-on-surface-variant font-medium">
+                      প্ল্যান্ট: {monograph.plantLocation}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Pharmaceutical Metadata Matrix */}

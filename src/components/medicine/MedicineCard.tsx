@@ -53,9 +53,11 @@ export default function MedicineCard({
                   </span>
                 )}
               </div>
-              <span className="font-body-sm text-body-sm text-secondary font-medium">
-                {medicine.manufacturer}
-              </span>
+              {medicine.manufacturer ? (
+                <span className="font-body-sm text-body-sm text-secondary font-medium">
+                  {medicine.manufacturer}
+                </span>
+              ) : null}
             </div>
           </div>
 
@@ -79,22 +81,30 @@ export default function MedicineCard({
         </div>
 
         {/* Generic Composition & Pack Size */}
-        <div className="p-space-sm rounded-lg bg-surface-container-low flex flex-col gap-1">
-          <span className="font-label-sm text-label-sm text-on-surface-variant font-semibold">
-            জেনেরিক উপাদান:
-          </span>
-          <p className="font-body-sm text-body-sm text-on-surface font-medium line-clamp-2">
-            {medicine.genericName}
-          </p>
-          <div className="flex items-center gap-space-xs mt-1">
-            <span className="material-symbols-outlined text-xs text-primary" aria-hidden="true">
-              inventory_2
-            </span>
-            <span className="font-label-sm text-label-sm text-on-surface-variant">
-              প্যাক সাইজ: {medicine.packSize}
-            </span>
+        {(medicine.genericName || medicine.packSize) && (
+          <div className="p-space-sm rounded-lg bg-surface-container-low flex flex-col gap-1">
+            {medicine.genericName && (
+              <>
+                <span className="font-label-sm text-label-sm text-on-surface-variant font-semibold">
+                  {medicine.itemType === "other" ? "উপাদান / স্পেসিফিকেশন:" : "জেনেরিক উপাদান:"}
+                </span>
+                <p className="font-body-sm text-body-sm text-on-surface font-medium line-clamp-2">
+                  {medicine.genericName}
+                </p>
+              </>
+            )}
+            {medicine.packSize && (
+              <div className="flex items-center gap-space-xs mt-1">
+                <span className="material-symbols-outlined text-xs text-primary" aria-hidden="true">
+                  inventory_2
+                </span>
+                <span className="font-label-sm text-label-sm text-on-surface-variant">
+                  প্যাক সাইজ: {medicine.packSize}
+                </span>
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
         {/* Pricing & Discount */}
         <div className="flex items-baseline justify-between pt-1">

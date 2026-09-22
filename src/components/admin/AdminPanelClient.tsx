@@ -252,6 +252,7 @@ export default function AdminPanelClient() {
     if (editingMedicine) {
       // 1. Update existing item in Firestore
       const updatePayload = {
+        itemType: data.itemType || editingMedicine.itemType || "medicine",
         tradeName: data.tradeName,
         genericName: data.genericName,
         manufacturer: data.manufacturer,
@@ -291,22 +292,24 @@ export default function AdminPanelClient() {
       }
     } else {
       // 2. Create new item in Firestore
+      const isOther = data.itemType === "other";
       const newPayload = {
-        tradeName: data.tradeName || "New Drug",
-        strength: data.strength || "500mg",
-        dosageForm: data.dosageForm || "Tablet",
-        genericName: data.genericName || "Generic",
-        manufacturer: data.manufacturer || "অনির্ধারিত",
+        itemType: data.itemType || "medicine",
+        tradeName: data.tradeName || (isOther ? "New Item" : "New Drug"),
+        strength: data.strength || "",
+        dosageForm: data.dosageForm || (isOther ? "অন্যান্য" : "Tablet"),
+        genericName: data.genericName || "",
+        manufacturer: data.manufacturer || "",
         mrp: data.mrp || 10,
         mrpFormatted: data.mrpFormatted || `৳ ${(data.mrp || 10).toFixed(2)}`,
         discountPct: data.discountPct || 0,
         status: data.status || "live",
-        iconType: data.iconType || "pill",
+        iconType: data.iconType || (isOther ? "pill" : "pill"),
         notes: data.notes || "",
         unitPrice: data.mrp || 10,
         unitPriceFormatted: data.mrpFormatted || `৳ ${(data.mrp || 10).toFixed(2)}`,
-        dosageBadge: data.dosageForm || "ট্যাবলেট",
-        unitPriceUnit: "/পিস",
+        dosageBadge: data.dosageForm || (isOther ? "সার্জিক্যাল" : "ট্যাবলেট"),
+        unitPriceUnit: isOther ? "/পিস" : "/ট্যাবলেট",
         isRx: data.status === "pending",
         stockStatus: "স্টক পর্যাপ্ত",
         lastUpdated: "এখনই",

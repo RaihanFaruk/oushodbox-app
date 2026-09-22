@@ -35,7 +35,7 @@ export default function MedicineBreadcrumb({
           chevron_right
         </span>
         <span className="text-on-surface font-semibold">
-          {tradeName} ({genericName})
+          {tradeName}{genericName ? ` (${genericName})` : ""}
         </span>
       </nav>
 
