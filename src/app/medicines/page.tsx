@@ -30,6 +30,7 @@ import { useRouter } from "next/navigation";
 export default function MedicineDatabasePage() {
   const router = useRouter();
   // ─── Interactive State ───────────────────────────────────────────────────
+  const [hasMounted, setHasMounted] = useState(false);
   const [medicines, setMedicines] = useState<DatabaseMedicine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -126,6 +127,7 @@ export default function MedicineDatabasePage() {
   }, []);
 
   useEffect(() => {
+    setHasMounted(true);
     const unsubscribe = subscribeToAuthChanges((user) => {
       const authorized = isAuthorizedAdmin(user);
       setIsAuthenticated(authorized);
@@ -298,8 +300,8 @@ export default function MedicineDatabasePage() {
     showToast("ফিল্টার রিসেট করা হয়েছে");
   };
 
-  // While auth state is loading, show a neutral loading skeleton — NOT the filters
-  if (isAuthChecking) {
+  // While auth state is loading or before hydration mount, show neutral loading skeleton
+  if (!hasMounted || isAuthChecking) {
     return (
       <div className="flex min-h-screen bg-surface font-body-md text-body-md text-on-surface">
         <Sidebar />

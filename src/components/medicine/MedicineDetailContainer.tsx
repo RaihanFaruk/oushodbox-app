@@ -18,6 +18,7 @@ interface MedicineDetailContainerProps {
 
 export default function MedicineDetailContainer({ id }: MedicineDetailContainerProps) {
   const router = useRouter();
+  const [hasMounted, setHasMounted] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,6 +26,7 @@ export default function MedicineDetailContainer({ id }: MedicineDetailContainerP
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
+    setHasMounted(true);
     const unsubscribe = subscribeToAuthChanges(async (user) => {
       const authorized = isAuthorizedAdmin(user);
       setIsAuthenticated(authorized);
@@ -76,7 +78,7 @@ export default function MedicineDetailContainer({ id }: MedicineDetailContainerP
     return () => unsubscribe();
   }, [id, router]);
 
-  if (isAuthChecking || isLoading) {
+  if (!hasMounted || isAuthChecking || isLoading) {
     return (
       <div className="flex min-h-screen bg-surface">
         <Sidebar />
