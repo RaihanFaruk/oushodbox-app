@@ -243,3 +243,26 @@ body {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
+
+/* Soft neon sign glow for public time-of-day greeting */
+@keyframes softNeonGlow {
+  0%, 100% {
+    box-shadow: 0 0 6px rgba(5, 150, 105, 0.2), 0 0 14px rgba(13, 148, 136, 0.12);
+    text-shadow: 0 0 6px rgba(5, 150, 105, 0.4), 0 0 12px rgba(13, 148, 136, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(5, 150, 105, 0.35), 0 0 20px rgba(13, 148, 136, 0.25);
+    text-shadow: 0 0 10px rgba(5, 150, 105, 0.6), 0 0 16px rgba(13, 148, 136, 0.35);
+  }
+}
+
+.soft-neon-greeting {
+  animation: softNeonGlow 3.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .soft-neon-greeting {
+    animation: none;
+  }
+}
+

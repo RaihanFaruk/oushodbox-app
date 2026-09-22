@@ -16,6 +16,7 @@ import MobileBottomNav from "@/components/layout/MobileBottomNav";
 
 // Modal & Firestore
 import AdminAddMedicineModal from "@/components/admin/AdminAddMedicineModal";
+import TimeGreetingBadge from "@/components/ui/TimeGreetingBadge";
 import {
   getMedicines as getFirestoreMedicines,
   addMedicine,
@@ -208,22 +209,26 @@ export default function HomePage() {
               </span>
             </div>
 
-            {/* Quick Add Medicine button (admin only) */}
-            {isAuthAdmin && (
-              <button
-                type="button"
-                onClick={() => {
-                  if (userEmail) {
-                    setIsAddModalOpen(true);
-                  } else {
-                    router.push("/admin");
-                  }
-                }}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all shadow-xs"
-              >
-                <span className="material-symbols-outlined text-base">add</span>
-                <span>{t("home.addNewMedicine")}</span>
-              </button>
+            {/* Quick Add Medicine (admin only) or Time-of-Day Greeting (public) */}
+            {!isAuthChecking && (
+              isAuthAdmin ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (userEmail) {
+                      setIsAddModalOpen(true);
+                    } else {
+                      router.push("/admin");
+                    }
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-semibold hover:bg-primary-dark active:scale-[0.98] transition-all shadow-xs"
+                >
+                  <span className="material-symbols-outlined text-base">add</span>
+                  <span>{t("home.addNewMedicine")}</span>
+                </button>
+              ) : (
+                <TimeGreetingBadge />
+              )
             )}
           </div>
         </header>

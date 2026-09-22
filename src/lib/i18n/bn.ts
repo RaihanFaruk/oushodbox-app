@@ -29,6 +29,12 @@ export const bn = {
     copy: "কপি করুন",
     copied: "কপি করা হয়েছে",
   },
+  greetings: {
+    morning: "শুভ সকাল ☀️",
+    afternoon: "শুভ দুপুর 🌤️",
+    evening: "শুভ সন্ধ্যা 🌆",
+    night: "শুভ রাত্রি 🌙",
+  },
   auth: {
     loginTitle: "অ্যাডমিন লগইন",
     loginSubtitle: "ঔষধBox ব্যক্তিগত ম্যানেজমেন্ট কনসোলে প্রবেশ করতে সাইন ইন করুন।",
