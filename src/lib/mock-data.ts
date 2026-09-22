@@ -29,353 +29,6 @@ export type DosageForm = "TAB" | "CAP" | "SYR" | "INJ" | "CRE" | "EYE" | "Rx";
 export type StockLevel = "in_stock" | "low_stock" | "out_of_stock";
 export type NoticeType = "warning" | "update" | "recall" | "approval";
 
-// ─── Demo Pharmacist Profile ───────────────────────────────────────────────
-
-export const DEMO_PHARMACIST = {
-  name: "ডাক্তার মোহাম্মদ",              // Demo name
-  nameGreeting: "শুভ সন্ধ্যা 👋",        // Greeting
-  role: "ফার্মাসিস্ট",
-  registrationNo: "A-14920",
-  grade: "A-Grade Pharmacist",
-  avatarUrl:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuB2Yn0knNzrvkchow5Aa81-JFpiWeRrY9CYZ8GNF14OoaLSt_2ofU9pJnRe_ekUZttsscggM1tNmIElL-DNXIal1EXZW93QWiqgcJ_VHw4b4caQdpjgN5bLkglCsQbi2bJ8_O4tP9rQOxn6GRJT40-xMxbqf8ai5BXQNFcn-P5uspUu5GaLFGSd40qlzjr3tfiMdqmhTdfxMeSznxgkcCcNsFV8ejX2sQbtjzv1zeouKlbpOfvVtiAFMw",
-  welcomeText:
-    "Welcome to ঔষধBox — আপনার ফার্মাসিউটিক্যাল ম্যানেজমেন্ট ও ডাটাবেজ সিস্টেম",
-  syncLabel: "লাইভ সিংক চলছে",
-  syncDetail: "৪,৫২৩ টি ঔষধ সিংক্রোনাইজড",
-};
-
-// ─── Demo Statistics ───────────────────────────────────────────────────────
-// ⚠️ These are demo numbers — not live database counts.
-
-export interface StatCardData {
-  label: string;
-  labelBn: string;
-  value: string;
-  unit: string;
-  trend: string;
-  trendIcon: string;
-  trendColor: "primary" | "secondary" | "tertiary" | "warning";
-  icon: string;
-  iconColor: "primary" | "secondary" | "tertiary" | "warning";
-  progressPct: number;
-}
-
-export const DEMO_STATS: StatCardData[] = [
-  {
-    label: "Total Medicines",
-    labelBn: "মোট ঔষধ ডেটাবেজ",
-    value: "৪,৫২৩",
-    unit: "টি",
-    trend: "+১৭ টি নতুন ঔষধ যোগ হয়েছে",
-    trendIcon: "trending_up",
-    trendColor: "tertiary",
-    icon: "database",
-    iconColor: "primary",
-    progressPct: 84,
-  },
-  {
-    label: "Verified Updates",
-    labelBn: "সর্বশেষ আপডেটকৃত",
-    value: "৩,২৪৮",
-    unit: "টি",
-    trend: "সব তথ্য যাচাই করা হয়েছে",
-    trendIcon: "done_all",
-    trendColor: "secondary",
-    icon: "update",
-    iconColor: "secondary",
-    progressPct: 65,
-  },
-  {
-    label: "WhatsApp Shares Today",
-    labelBn: "হোয়াটসঅ্যাপ শেয়ার",
-    value: "৬৮+",
-    unit: "বার",
-    trend: "আজকের ফার্মাসিউটিক্যাল শেয়ার",
-    trendIcon: "quickreply",
-    trendColor: "tertiary",
-    icon: "share",
-    iconColor: "tertiary",
-    progressPct: 72,
-  },
-  {
-    label: "Low Stock Alerts",
-    labelBn: "কম স্টক সতর্কতা",
-    value: "১২",
-    unit: "টি",
-    trend: "মনোযোগ প্রয়োজন",
-    trendIcon: "warning",
-    trendColor: "warning",
-    icon: "inventory_2",
-    iconColor: "warning",
-    progressPct: 18,
-  },
-];
-
-// ─── Demo Medicines ────────────────────────────────────────────────────────
-// ⚠️ Fictional demo records — prices, stock, and details are illustrative only.
-
-export interface DemoMedicine {
-  id: string;
-  tradeName: string;
-  strength: string;
-  extraBadge?: string;
-  extraBadgeType?: "normal" | "rx" | "schedule";
-  genericLabel: string;
-  genericName: string;
-  manufacturer: string;
-  priceLabel: string;
-  price: string;
-  priceUnit: string;
-  stockInfo: string;
-  stockType: "normal" | "warning" | "error";
-  dosageForm: DosageForm;
-  dosageColor: "primary" | "secondary" | "tertiary" | "error";
-}
-
-export const DEMO_MEDICINES: DemoMedicine[] = [];
-
-// ─── Demo Filter Categories ────────────────────────────────────────────────
-
-export interface FilterCategory {
-  id: string;
-  labelBn: string;
-  labelEn: string;
-}
-
-export const FILTER_CATEGORIES: FilterCategory[] = [
-  { id: "all", labelBn: "সকল ঔষধ", labelEn: "All" },
-  { id: "paracetamol", labelBn: "প্যারাসিটামল", labelEn: "Paracetamol" },
-  { id: "antibiotic", labelBn: "অ্যান্টিবায়োটিক", labelEn: "Antibiotic" },
-  { id: "gastric", labelBn: "গ্যাস্ট্রিক / PPI", labelEn: "Gastric / PPI" },
-  { id: "diabetes", labelBn: "ডায়াবেটিসের", labelEn: "Diabetes" },
-  { id: "vitamin", labelBn: "ভিটামিন ও মিনারেল", labelEn: "Vitamin" },
-  { id: "pediatric", labelBn: "পেডিয়াট্রিক মেড", labelEn: "Pediatric" },
-];
-
-// ─── Demo Quick Actions ────────────────────────────────────────────────────
-
-export interface QuickAction {
-  id: string;
-  icon: string;
-  iconBg: string;
-  iconColor: string;
-  badge?: string;
-  badgeType: "pill" | "chip" | "dot";
-  badgeBg?: string;
-  badgeText?: string;
-  title: string;
-  titleColor: string;
-  description: string;
-  cta: string;
-  ctaColor: string;
-  href: string;
-}
-
-export const QUICK_ACTIONS: QuickAction[] = [
-  {
-    id: "medicine-db",
-    icon: "medication",
-    iconBg: "bg-primary-fixed",
-    iconColor: "text-on-primary-fixed-variant",
-    badgeType: "chip",
-    title: "ঔষধ ডেটাবেজ",
-    titleColor: "group-hover:text-primary",
-    description: "DGDA অনুমোদিত ঔষধ রেকর্ড ও জেনেরিক ইনফরমেশন খুঁজুন",
-    cta: "ডেটাবেজ ব্রাউজ করুন",
-    ctaColor: "text-primary",
-    href: "/medicines",
-  },
-  {
-    id: "add-medicine",
-    icon: "add_circle",
-    iconBg: "bg-secondary-fixed",
-    iconColor: "text-on-secondary-fixed-variant",
-    badge: "Admin",
-    badgeType: "chip",
-    badgeBg: "bg-surface-container-highest text-on-surface",
-    title: "নতুন ঔষধ যোগ",
-    titleColor: "group-hover:text-secondary",
-    description: "ফার্মাসিউটিক্যাল ইনভেন্টরি তে নতুন ঔষধ রেকর্ড আপডেট করুন",
-    cta: "এখনই যোগ করুন",
-    ctaColor: "text-secondary",
-    href: "/admin",
-  },
-  {
-    id: "whatsapp-share",
-    icon: "send_to_mobile",
-    iconBg: "bg-tertiary-fixed",
-    iconColor: "text-on-tertiary-fixed-variant",
-    badge: "Instant",
-    badgeType: "pill",
-    badgeBg: "bg-tertiary text-on-tertiary",
-    title: "হোয়াটসঅ্যাপ শেয়ার",
-    titleColor: "group-hover:text-tertiary",
-    description: "রোগীকে সরাসরি প্রেসক্রিপশন সাজেশন ও ঔষধ তথ্য পাঠান",
-    cta: "শেয়ার শুরু করুন",
-    ctaColor: "text-tertiary",
-    href: "#",
-  },
-  {
-    id: "alerts",
-    icon: "warning",
-    iconBg: "bg-error-container",
-    iconColor: "text-on-error-container",
-    badgeType: "dot",
-    title: "স্টক সতর্কতা",
-    titleColor: "group-hover:text-error",
-    description: "DGDA নির্দেশিত ওষুধ সতর্কবার্তা, মেয়াদোত্তীর্ণ ও স্বল্পস্টক",
-    cta: "সতর্কতা দেখুন",
-    ctaColor: "text-error",
-    href: "#",
-  },
-];
-
-// ─── Demo DGDA Notices ────────────────────────────────────────────────────
-// ⚠️ SAMPLE/DEMO ONLY — These notices are NOT real, not sourced from DGDA,
-// not current, and not verified. For demonstration purposes only.
-// Real DGDA notices will be loaded from an official API in a future phase.
-
-export interface DgdaNotice {
-  id: string;
-  type: NoticeType;
-  typeBadge: string;
-  typeBg: string;
-  typeText: string;
-  icon: string;
-  iconColor: string;
-  title: string;
-  description: string;
-  date: string;
-  actionLabel: string;
-  actionColor: string;
-}
-
-export const DEMO_DGDA_NOTICES: DgdaNotice[] = [
-  {
-    id: "n1",
-    type: "warning",
-    typeBadge: "নমুনা সতর্কতা",
-    typeBg: "bg-error-container",
-    typeText: "text-on-error-container",
-    icon: "gpp_bad",
-    iconColor: "text-error",
-    title: "নমুনা: ওষুধ প্রত্যাহার বিজ্ঞপ্তি [DEMO]",
-    description:
-      "⚠️ এটি একটি ডেমো নোটিশ। একটি কাল্পনিক ব্যাচ (ABC-2024-01) উৎপাদন মানের কারণে প্রত্যাহারের নমুনা দেখানো হচ্ছে।",
-    date: "নমুনা তারিখ",
-    actionLabel: "বিস্তারিত (Demo)",
-    actionColor: "text-error",
-  },
-  {
-    id: "n2",
-    type: "approval",
-    typeBadge: "নমুনা অনুমোদন",
-    typeBg: "bg-primary-fixed",
-    typeText: "text-on-primary-fixed-variant",
-    icon: "verified",
-    iconColor: "text-primary",
-    title: "নমুনা: নতুন ঔষধ নিবন্ধন [DEMO]",
-    description:
-      "✅ এটি একটি ডেমো এন্ট্রি। একটি কাল্পনিক জেনেরিক ওষুধের নিবন্ধন অনুমোদনের UI নমুনা।",
-    date: "নমুনা তারিখ",
-    actionLabel: "বিস্তারিত (Demo)",
-    actionColor: "text-primary",
-  },
-  {
-    id: "n3",
-    type: "update",
-    typeBadge: "নমুনা আপডেট",
-    typeBg: "bg-secondary-fixed",
-    typeText: "text-on-secondary-fixed-variant",
-    icon: "update",
-    iconColor: "text-secondary",
-    title: "নমুনা: মূল্য পরিবর্তন বিজ্ঞপ্তি [DEMO]",
-    description:
-      "ℹ️ এটি একটি ডেমো এন্ট্রি। কাল্পনিক ওষুধের MRP পরিবর্তনের UI নমুনা। বাস্তব তথ্য ভবিষ্যতে সংযুক্ত হবে।",
-    date: "নমুনা তারিখ",
-    actionLabel: "বিস্তারিত (Demo)",
-    actionColor: "text-secondary",
-  },
-];
-
-// ─── Demo Recent Activity ─────────────────────────────────────────────────
-// ⚠️ Fictional demo activity log — not real user actions.
-
-export interface ActivityItem {
-  id: string;
-  icon: string;
-  iconBg: string;
-  iconColor: string;
-  title: string;
-  detail: string;
-  time: string;
-  dotColor: string;
-}
-
-export const DEMO_ACTIVITIES: ActivityItem[] = [
-  {
-    id: "a1",
-    icon: "share",
-    iconBg: "bg-tertiary-fixed",
-    iconColor: "text-on-tertiary-fixed-variant",
-    title: "WhatsApp শেয়ার",
-    detail: "Napa Extra 500mg — রোগী মোবাইলে পাঠানো হয়েছে",
-    time: "৫ মিনিট আগে",
-    dotColor: "bg-tertiary",
-  },
-  {
-    id: "a2",
-    icon: "search",
-    iconBg: "bg-primary-fixed",
-    iconColor: "text-on-primary-fixed-variant",
-    title: "ঔষধ অনুসন্ধান",
-    detail: "Seclo 20mg Capsule — স্টক চেক করা হয়েছে",
-    time: "১২ মিনিট আগে",
-    dotColor: "bg-primary",
-  },
-  {
-    id: "a3",
-    icon: "add_circle",
-    iconBg: "bg-secondary-fixed",
-    iconColor: "text-on-secondary-fixed-variant",
-    title: "নতুন ঔষধ যোগ",
-    detail: "Monas 10mg ডেটাবেজে আপডেট করা হয়েছে",
-    time: "১ ঘণ্টা আগে",
-    dotColor: "bg-secondary",
-  },
-  {
-    id: "a4",
-    icon: "inventory_2",
-    iconBg: "bg-amber-tint",
-    iconColor: "text-warning",
-    title: "স্টক সতর্কতা",
-    detail: "Ciprocin 500mg — স্টক কম হওয়ার বিজ্ঞপ্তি",
-    time: "২ ঘণ্টা আগে",
-    dotColor: "bg-warning",
-  },
-];
-
-// ─── PWA Demo Status ──────────────────────────────────────────────────────
-
-export const PWA_DEMO_STATUS = {
-  cacheSize: "4.8 MB (IndexedDB)",
-  syncStatus: "সফলভাবে সম্পন্ন",
-  lastSync: "আজ, সকাল ৯:১৫",
-  features: [
-    "অফলাইনে লাইভ সার্চ কাজ করে",
-    "হোমস্ক্রিনে ইনস্টল ফার্মাসিউটিক্যাল",
-    "ব্যাকগ্রাউন্ড সার্ভিসওয়ার্কার আপডেট",
-    "পুশ নোটিফিকেশন ও অ্যালার্ট সাপোর্ট",
-  ],
-};
-
-// ─── Phase 3: Demo Medicine Database Registry ─────────────────────────────
-// ⚠️ MOCK / DEMO DATA ONLY — Fictional records preserved from Stitch design.
-// Not real, verified, or live information.
-
-export const DEMO_DATABASE_MEDICINES: DatabaseMedicine[] = [];
-
 // ─── Filter & Sort Options from Stitch Design ─────────────────────────────
 
 export interface FilterSelectOption {
@@ -606,7 +259,7 @@ export const DEMO_UPCOMING_FEATURES: UpcomingFeatureItem[] = [
     progressPct: 75,
     previewType: "stock_bar",
     previewData: {
-      drugName: "Napa Extra 500mg",
+      drugName: "ইনভেন্টরি আইটেম",
       remainingText: "মাত্র ১৮ পাতা অবশিষ্ট",
       fillPct: 14,
     },
@@ -623,7 +276,7 @@ export const DEMO_UPCOMING_FEATURES: UpcomingFeatureItem[] = [
     progressPct: 85,
     previewType: "expiry_badge",
     previewData: {
-      drugName: "Seclo 20mg Cap",
+      drugName: "ফার্মাকোপিয়া আইটেম",
       expiryDate: "মেয়াদ শেষ: ২৮ এপ্রিল, ২০২৫",
       daysLeft: "৫৮ দিন বাকি",
     },
@@ -671,7 +324,7 @@ export const DEMO_UPCOMING_FEATURES: UpcomingFeatureItem[] = [
     progressPct: 70,
     previewType: "refill_alert",
     previewData: {
-      patientAlert: "আব্দুল করিম: আগামী ৫ তারিখে ইনসুলিন রিফিল",
+      patientAlert: "ক্রনিক ডিজিজ প্রেসক্রিপশন রিফিল অ্যালার্ট",
     },
   },
   {
@@ -686,7 +339,7 @@ export const DEMO_UPCOMING_FEATURES: UpcomingFeatureItem[] = [
     progressPct: 80,
     previewType: "depot_schedule",
     previewData: {
-      companyName: "Square Pharma (ডিপো ১)",
+      companyName: "রেজিস্টার্ড সাপ্লায়ার (ডিপো ১)",
       schedule: "অর্ডার ডে: রবিবার/বুধবার",
     },
   },
@@ -717,7 +370,7 @@ export const DEMO_UPCOMING_FEATURES: UpcomingFeatureItem[] = [
     progressPct: 65,
     previewType: "rx_alert",
     previewData: {
-      interactionAlert: "Rx Alert: Ciprofloxacin + Antacid ইন্টারঅ্যাকশন সনাক্ত!",
+      interactionAlert: "Rx Alert: ড্রাগ ইন্টারঅ্যাকশন পরীক্ষা সক্রিয়",
     },
   },
   {
