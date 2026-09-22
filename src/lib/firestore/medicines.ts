@@ -542,12 +542,42 @@ export async function getPriceHistory(medicineId: string): Promise<PriceHistoryE
 }
 
 /**
- * Delete a medicine document from Firestore by its ID.
+ * Delete a medicine document from Firestore by its ID, cascading
+ * deletion to all associated subcollections (priceHistory, private)
+ * to avoid leaving orphaned documents.
  */
 export async function deleteMedicine(id: string): Promise<boolean> {
   if (!id) return false;
 
   try {
+    // 1. Delete all documents in priceHistory subcollection
+    try {
+      const historyCol = collection(db, MEDICINES_COLLECTION, id, "priceHistory");
+      const historySnap = await getDocs(historyCol);
+      if (!historySnap.empty) {
+        const deletePromises = historySnap.docs.map((d) => deleteDoc(d.ref));
+        await Promise.all(deletePromises);
+      }
+    } catch (historyErr) {
+      console.warn(`[Firestore] Failed to cascade delete priceHistory for ${id}:`, historyErr);
+    }
+
+    // 2. Delete all documents in private subcollection
+    try {
+      const privCol = collection(db, MEDICINES_COLLECTION, id, "private");
+      const privSnap = await getDocs(privCol);
+      if (!privSnap.empty) {
+        const deletePromises = privSnap.docs.map((d) => deleteDoc(d.ref));
+        await Promise.all(deletePromises);
+      } else {
+        const privDoc = doc(db, MEDICINES_COLLECTION, id, "private", "data");
+        await deleteDoc(privDoc).catch(() => {});
+      }
+    } catch (privErr) {
+      console.warn(`[Firestore] Failed to cascade delete private subcollection for ${id}:`, privErr);
+    }
+
+    // 3. Delete root medicine document
     const docRef = doc(db, MEDICINES_COLLECTION, id);
     await deleteDoc(docRef);
     return true;

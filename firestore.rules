@@ -23,10 +23,10 @@ service cloud.firestore {
         allow read, write: if isAdmin();
       }
 
-      // Price history subcollection: append-only and immutable
+      // Price history subcollection: immutable history entries (create, delete by admin; update forbidden)
       match /priceHistory/{entryId} {
-        allow read, create: if isAdmin();
-        allow update, delete: if false;
+        allow read, create, delete: if isAdmin();
+        allow update: if false;
       }
     }
 
