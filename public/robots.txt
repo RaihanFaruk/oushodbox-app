@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /admin/
+
+# Public routes are crawlable
+# / (homepage), /public, /medicines -- no restrictions
